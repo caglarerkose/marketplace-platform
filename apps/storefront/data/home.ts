@@ -9,12 +9,17 @@ export interface HomeProduct {
   image: string;
 }
 
-export const categories = ["Elektronik", "Ev & Yaşam", "Moda", "Anne & Çocuk", "Kozmetik", "Oto & Yapı", "Hırdavat", "Spor & Outdoor"];
+export const categories = ["Elektronik", "Ev & Yaşam", "Moda", "Anne & Çocuk", "Kozmetik", "Oto & Yapı", "Hırdavat", "Elektronik", "Ev & Yaşam", "Moda", "Spor & Outdoor", "Kitap & Hobi", "Ofis & Kırtasiye", "Pet Shop", "Süper Fırsatlar"];
 
 export const quickLinks = [
-  ["🔥", "Çok Satanlar"], ["🚚", "Hızlı Teslimat"], ["🎁", "Avantajlı Seçki"],
-  ["🏷️", "Kuponlu Ürünler"], ["📱", "Elektronik"], ["🏠", "Ev Ürünleri"],
-  ["⚡", "Günün Fırsatları"], ["📦", "Kargo Bedava"],
+  ["fa-fire", "Çok Satanlar", "orange"], ["fa-truck-fast", "Hızlı Teslimat", "green"],
+  ["fa-gift", "Avantajlı Seçki", "pink"], ["fa-arrow-down", "Kuponlu Ürünler", "purple"],
+  ["fa-mobile-screen", "Elektronik", "blue"], ["fa-house-chimney", "Ev Ürünleri", "yellow"],
+  ["fa-bolt", "Günün Fırsatları", "orange"], ["fa-tags", "Sepette İndirim", "pink"],
+  ["fa-box-open", "Kargo Bedava", "green"], ["fa-star", "Yeni Gelenler", "purple"],
+  ["fa-laptop", "Bilgisayar", "blue"], ["fa-shirt", "Moda", "yellow"],
+  ["fa-spray-can-sparkles", "Kozmetik", "pink"], ["fa-baby-carriage", "Anne Çocuk", "green"],
+  ["fa-screwdriver-wrench", "Oto & Yapı", "orange"],
 ] as const;
 
 export const products: HomeProduct[] = [
