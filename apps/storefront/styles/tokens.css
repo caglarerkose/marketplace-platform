@@ -1,0 +1,29 @@
+:root {
+  --color-brand-orange: #ff7a00;
+  --color-brand-coral: #ff4f30;
+  --color-brand-yellow: #ffb000;
+  --color-success-500: #4caf50;
+  --color-success-600: #16a34a;
+  --color-favorite: #ff3366;
+  --color-danger: #d32f2f;
+  --color-text-strong: #222;
+  --color-text-default: #333;
+  --color-text-muted: #777;
+  --color-text-subtle: #999;
+  --color-border-default: #eee;
+  --color-border-strong: #ddd;
+  --color-surface-page: #f8f9fa;
+  --color-surface-card: #fff;
+  --color-surface-subtle: #f1f1f1;
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-2xl: 16px;
+  --radius-pill: 999px;
+  --shadow-card-soft: 0 4px 12px rgb(0 0 0 / 3.5%);
+  --shadow-card-hover: 0 6px 12px rgb(0 0 0 / 10%);
+  --shadow-sticky: 0 4px 10px rgb(0 0 0 / 5%);
+  --content-wide: 1385px;
+}

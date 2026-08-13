@@ -1,0 +1,2 @@
+import { PageFrame } from "@/components/layout/page-frame";
+export default function AccountPage(){return <PageFrame title="Hesabım"><div className="account-layout"><aside className="profile-card"><div className="avatar">ÇE</div><h2>Çağtuğ</h2><a href="#">Siparişlerim</a><a href="#">Adreslerim</a><a href="#">Hesap Ayarları</a></aside><section className="panel"><h2>Siparişlerim</h2><div className="empty-state compact"><i className="fa-solid fa-box-open"/><p>Henüz siparişin yok</p></div></section></div></PageFrame>}

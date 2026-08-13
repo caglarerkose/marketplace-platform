@@ -9,5 +9,6 @@ target/
 .idea/
 .vscode/
 *.log
+*.tsbuildinfo
 backend/uploads/
 /img/
