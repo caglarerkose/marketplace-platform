@@ -10,7 +10,7 @@ export function ProductCard({ product }: { product: HomeProduct }) {
   return (
     <article className="product-card">
       <button className={`favorite ${favorite ? "active" : ""}`} onClick={() => setFavorite((value) => !value)} aria-label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"} aria-pressed={favorite}>♥</button>
-      <div className={`product-visual ${product.tone}`} aria-hidden="true">{product.emoji}</div>
+      <div className="product-visual"><img src={product.image} alt={product.name} loading="lazy" /></div>
       <span className="badge">{product.badge}</span>
       <div className="product-body">
         <h3>{product.name}</h3>
