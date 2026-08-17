@@ -1,0 +1,1 @@
+"use client";import{useStore}from"./store-provider";export function StoreToast(){const{toast}=useStore();return <div className={`store-toast ${toast?"show":""}`}><i className="fa-solid fa-circle-check"/>{toast}</div>}

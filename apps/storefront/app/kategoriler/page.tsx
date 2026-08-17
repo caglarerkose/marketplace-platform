@@ -1,7 +1,1 @@
-import Image from "next/image";
-import Link from "next/link";
-import { PageFrame } from "@/components/layout/page-frame";
-
-const categories = [["Elektronik","elektronik.jpg"],["Bilgisayar & Tablet","bilgisayar.jpg"],["Otomobil","volkswagen.jpg"],["Beyaz Eşya","beyazesya.jpg"],["Çanta & Terlik","canta.jpg"],["Parfüm & Deodorant","parfum.jpg"],["Küçük Ev Aletleri","kucukevaletleri.jpg"],["Mobilya","mobilya.jpg"],["Temizlik Ürünleri","temizlik.jpg"]] as const;
-
-export default function CategoriesPage() { return <PageFrame title="Kategoriler"><div className="category-grid">{categories.map(([title,image]) => <Link className="category-card" href={`/kategori/${encodeURIComponent(title.toLocaleLowerCase("tr-TR"))}`} key={title}><Image src={`/img/${image}`} alt="" fill sizes="(max-width:768px) 50vw, 25vw"/><strong>{title}</strong></Link>)}</div></PageFrame>; }
+import Image from"next/image";import Link from"next/link";import{categoryCards}from"@/data/catalog";export default function Categories(){return <div className="container page"><div className="title"><h1>Tüm Kategoriler</h1><p>Aradığın ürünlere kategorilerden hızlıca ulaş.</p></div><div className="category-grid">{categoryCards.map(x=><Link href={`/kategori/${encodeURIComponent(x[0].toLowerCase().replaceAll(" ","-"))}`} key={x[0]}><Image src={x[1]} fill sizes="(max-width:768px) 50vw, 25vw" alt={x[0]}/><h3>{x[0]}</h3></Link>)}</div></div>}
