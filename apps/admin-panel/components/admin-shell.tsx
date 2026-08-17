@@ -1,41 +1,17 @@
 "use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { navigation } from "@/data/admin";
-
-export function AdminShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="admin-shell">
-      <header className="topbar">
-        <Link className="brand" href="/" onClick={() => setOpen(false)}>
-          <span className="brand-mark">➜</span><span>bişey<span>eksik</span></span><small>admin</small>
-        </Link>
-        <div className="top-search"><span>⌕</span><input aria-label="Panelde ara" placeholder="Sipariş, satıcı veya ürün ara" /></div>
-        <div className="top-actions">
-          <button aria-label="Bildirimler" className="icon-button">♢<b>12</b></button>
-          <button aria-label="Mesajlar" className="icon-button">✉<b>5</b></button>
-          <div className="admin-profile"><span>A</span><div><strong>Admin</strong><small>Sistem Yöneticisi</small></div></div>
-          <button aria-label="Menüyü aç" className="menu-button" onClick={() => setOpen(!open)}>☰</button>
-        </div>
-      </header>
-      <aside className={open ? "sidebar open" : "sidebar"}>
-        <p className="nav-title">YÖNETİM</p>
-        <nav>
-          {navigation.map((item) => {
-            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-            return <Link className={active ? "nav-link active" : "nav-link"} href={item.href} key={item.href} onClick={() => setOpen(false)}><i>{item.icon}</i><span>{item.label}</span>{item.badge ? <b>{item.badge}</b> : null}</Link>;
-          })}
-        </nav>
-        <div className="side-promo"><small>YENİ ÖZELLİK</small><strong>Gelişmiş Raporlar</strong><p>Satış ve performans verilerinizi tek ekrandan inceleyin.</p><Link href="/raporlar">Keşfet</Link></div>
-        <div className="support"><strong>7/24 Yönetici Desteği</strong><span>destek@biseyeksik.com</span></div>
-      </aside>
-      {open && <button aria-label="Menüyü kapat" className="backdrop" onClick={() => setOpen(false)} />}
-      <main>{children}</main>
-    </div>
-  );
+import Image from "next/image";
+import {createContext,useContext,useState} from "react";
+import {allSections,sideSections,topSections} from "@/data/admin";
+type Ctx={active:string;setActive:(id:string)=>void;notify:(m:string)=>void;openDrawer:(t:string)=>void};
+const AdminContext=createContext<Ctx|null>(null);
+export const useAdmin=()=>{const v=useContext(AdminContext);if(!v)throw new Error("Admin context missing");return v};
+export function AdminShell({children}:{children:React.ReactNode}){
+ const[active,setActiveState]=useState("overview"),[menu,setMenu]=useState(false),[toast,setToast]=useState(""),[drawer,setDrawer]=useState("");
+ const setActive=(id:string)=>{if(allSections.some(x=>x.id===id)){setActiveState(id);setMenu(false);window.scrollTo({top:0,behavior:"smooth"})}};
+ const notify=(m:string)=>{setToast(m);window.setTimeout(()=>setToast(""),2400)};
+ return <AdminContext.Provider value={{active,setActive,notify,openDrawer:setDrawer}}><div className="admin-shell">
+  <header className="topbar"><button className="panel-header-logo" onClick={()=>setActive("overview")} aria-label="Genel bakışa dön"><Image src="/img/anayazi.png" width={228} height={46} priority alt="BişeyEksik"/></button><button className="hamb" onClick={()=>setMenu(!menu)} aria-label="Menüyü aç"><i className="fa-solid fa-bars"/></button><nav className="top-module-nav">{topSections.slice(0,11).map(x=><button key={x.id} className={`top-nav-btn ${active===x.id?"active":""}`} onClick={()=>setActive(x.id)}><i className={`fa-solid ${x.icon}`}/>{x.title}</button>)}</nav><div className="top-actions"><button className="icon-btn" onClick={()=>setDrawer("Bildirimler")}><i className="fa-regular fa-bell"/><span className="dot">12</span></button><button className="icon-btn" onClick={()=>setDrawer("Mesajlar")}><i className="fa-regular fa-envelope"/><span className="dot">5</span></button><button className="icon-btn" onClick={()=>setDrawer("Yardım Merkezi")}><i className="fa-regular fa-circle-question"/></button><div className="admin-user"><div className="avatar">A</div><div><strong>Admin</strong><span>Sistem Yöneticisi</span></div></div></div></header>
+  <aside className={`sidebar ${menu?"open":""}`}><nav className="nav-group">{sideSections.map(x=><button key={x.id} className={`nav-btn ${active===x.id?"active":""}`} onClick={()=>setActive(x.id)}><i className={`fa-solid ${x.icon}`}/>{x.title}{x.badge&&<span className="nav-badge">{x.badge}</span>}</button>)}</nav><div className="side-promo"><small>YENİ ÖZELLİK</small><h3>Gelişmiş Raporlar</h3><p>Detaylı satış ve performans raporlarını tek tıkla görüntüleyin.</p><button onClick={()=>setActive("reports")}>Keşfet</button></div><div className="support-box"><strong><i className="fa-solid fa-headset"/> 7/24 Yönetici Desteği</strong><div><i className="fa-solid fa-phone"/> +90 (850) 123 45 67</div><div><i className="fa-regular fa-envelope"/> destek@biseyeksik.com</div></div></aside>{menu&&<button className="menu-backdrop" aria-label="Menüyü kapat" onClick={()=>setMenu(false)}/>}<main className="main">{children}</main>
+  <div className={`drawer ${drawer?"active":""}`} onClick={()=>setDrawer("")}><div className="drawer-panel" onClick={e=>e.stopPropagation()}><div className="drawer-head"><h2>{drawer}</h2><button className="close" onClick={()=>setDrawer("")}><i className="fa-solid fa-xmark"/></button></div><div className="info-strip"><i className="fa-solid fa-circle-info"/><div><strong>{drawer}</strong><p>Bu alan Supabase bağlantısı tamamlandığında canlı kayıtlarla güncellenecek.</p></div></div><div className="form-grid"><label className="field">Başlık<input placeholder="Başlık girin"/></label><label className="field">Durum<select><option>Aktif</option><option>Pasif</option></select></label><label className="field full">Açıklama<textarea placeholder="Açıklama yazın"/></label></div><button className="btn primary" onClick={()=>{notify("Değişiklikler kaydedildi");setDrawer("")}}>Kaydet</button></div></div><div className={`toast ${toast?"show":""}`}><i className="fa-solid fa-circle-check"/> {toast}</div>
+ </div></AdminContext.Provider>;
 }

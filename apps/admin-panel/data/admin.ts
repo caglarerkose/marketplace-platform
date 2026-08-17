@@ -1,32 +1,33 @@
-export type NavItem = { href: string; label: string; icon: string; badge?: number };
-
-export const navigation: NavItem[] = [
-  { href: "/", label: "Genel Bakış", icon: "⌂" },
-  { href: "/saticilar", label: "Satıcı Yönetimi", icon: "▣", badge: 32 },
-  { href: "/evraklar", label: "Evrak Yönetimi", icon: "▤", badge: 14 },
-  { href: "/urun-onaylari", label: "Ürün Onayları", icon: "□", badge: 54 },
-  { href: "/kategoriler", label: "Kategoriler", icon: "▦" },
-  { href: "/kampanyalar", label: "Kampanyalar", icon: "◈" },
-  { href: "/komisyonlar", label: "Komisyonlar", icon: "%" },
-  { href: "/siparisler", label: "Siparişler", icon: "▱" },
-  { href: "/musteriler", label: "Müşteriler", icon: "♙" },
-  { href: "/destek", label: "Destek Talepleri", icon: "?", badge: 18 },
-  { href: "/raporlar", label: "Raporlar", icon: "↗" },
-  { href: "/site-yonetimi", label: "Site Yönetimi", icon: "⚙" },
+export type SectionKind = "overview" | "workflow" | "table" | "modules" | "settings";
+export type AdminSection = { id:string; title:string; description:string; icon:string; kind:SectionKind; badge?:number; top?:boolean; metric?:string; metricLabel?:string };
+export const sideSections:AdminSection[]=[
+ {id:"overview",title:"Genel Bakış",description:"Platform performansını aşağıdan takip edebilirsiniz.",icon:"fa-house",kind:"overview"},
+ {id:"sellers",title:"Satıcı Yönetimi",description:"Başvuru, onay, eksik bilgi, evrak ve mağaza yetkilendirme sürecini tek ekrandan yönetin.",icon:"fa-store",badge:32,kind:"workflow",metric:"32",metricLabel:"İncelemede başvuru"},
+ {id:"documents",title:"Evrak Yönetimi",description:"Satıcı evraklarını doğrulayın, eksik belge taleplerini ve onay geçmişini yönetin.",icon:"fa-folder-open",badge:14,kind:"workflow",metric:"14",metricLabel:"Evrak bekleniyor"},
+ {id:"approvals",title:"Ürün Onayları",description:"Yayına alınmayı bekleyen ürünlerin içerik, fiyat ve kategori kontrollerini tamamlayın.",icon:"fa-box-open",badge:54,kind:"workflow",metric:"5.432",metricLabel:"Onay bekleyen ürün"},
+ {id:"categories",title:"Kategoriler",description:"Kategori ağacı, özellik setleri ve filtre standartlarını düzenleyin.",icon:"fa-layer-group",kind:"table",metric:"186",metricLabel:"Aktif kategori"},
+ {id:"product-imports",title:"Aktarım / Katalog",description:"Toplu ürün dosyalarını eşleştirin, doğrulayın ve kataloğa aktarın.",icon:"fa-code-merge",kind:"workflow",metric:"8",metricLabel:"Devam eden aktarım"},
+ {id:"campaigns",title:"Kampanyalar",description:"Kampanya, kupon ve satıcı katılım süreçlerini yönetin.",icon:"fa-bullhorn",kind:"table",metric:"24",metricLabel:"Aktif kampanya"},
+ {id:"commissions",title:"Komisyonlar",description:"Kategori ve satıcı bazlı komisyon oranlarını ve hakedişleri yönetin.",icon:"fa-percent",kind:"table",metric:"₺4.562.317",metricLabel:"Aylık komisyon"},
+ {id:"orders",title:"Siparişler",description:"Sipariş, teslimat, iptal ve iade süreçlerini izleyin.",icon:"fa-bag-shopping",kind:"table",metric:"24.657",metricLabel:"Günlük sipariş"},
+ {id:"customers",title:"Müşteriler",description:"Müşteri segmentleri, davranışları ve destek geçmişi.",icon:"fa-user",kind:"table",metric:"1.234.567",metricLabel:"Toplam müşteri"},
+ {id:"support",title:"Destek Talepleri",description:"Müşteri ve satıcı taleplerini önceliklerine göre çözümleyin.",icon:"fa-life-ring",badge:18,kind:"table",metric:"256",metricLabel:"Açık talep"},
+ {id:"reports",title:"Raporlar",description:"Satış, satıcı, ürün ve operasyon performansını analiz edin.",icon:"fa-chart-line",kind:"modules",metric:"18,6%",metricLabel:"Ciro büyümesi"},
+ {id:"settings",title:"Sistem Ayarları",description:"Platform davranışları, bildirimler ve yönetici yetkilerini düzenleyin.",icon:"fa-gear",kind:"settings",metric:"Aktif",metricLabel:"Sistem durumu"}
 ];
-
-export const modules = {
-  saticilar: { title: "Satıcı Yönetimi", description: "Başvuru, onay, evrak ve mağaza yetkilendirme süreçlerini yönetin.", metric: "32", metricLabel: "İncelemede başvuru", action: "Yeni Satıcı Onayla" },
-  evraklar: { title: "Evrak Yönetimi", description: "Satıcı belgelerini ve doğrulama durumlarını tek ekrandan takip edin.", metric: "14", metricLabel: "Bekleyen evrak", action: "Evrakları İncele" },
-  "urun-onaylari": { title: "Ürün Onayları", description: "Yayına alınmayı bekleyen ürünleri inceleyin ve yönetin.", metric: "5.432", metricLabel: "Onay bekleyen ürün", action: "Toplu Onayla" },
-  kategoriler: { title: "Kategori Yönetimi", description: "Kategori ağacı, özellikler ve filtre standartlarını düzenleyin.", metric: "186", metricLabel: "Aktif kategori", action: "Kategori Ekle" },
-  kampanyalar: { title: "Kampanyalar", description: "Pazaryeri kampanyalarını, kuponları ve satıcı katılımlarını yönetin.", metric: "24", metricLabel: "Aktif kampanya", action: "Kampanya Oluştur" },
-  komisyonlar: { title: "Komisyonlar", description: "Kategori ve satıcı bazlı komisyon oranlarını yönetin.", metric: "₺4.562.317", metricLabel: "Aylık komisyon", action: "Oranları Düzenle" },
-  siparisler: { title: "Siparişler", description: "Sipariş, teslimat, iptal ve iade süreçlerini izleyin.", metric: "24.657", metricLabel: "Günlük sipariş", action: "Siparişleri Dışa Aktar" },
-  musteriler: { title: "Müşteriler", description: "Müşteri segmentlerini, davranışlarını ve destek geçmişini görüntüleyin.", metric: "1.234.567", metricLabel: "Toplam müşteri", action: "Listeyi İndir" },
-  destek: { title: "Destek Talepleri", description: "Müşteri ve satıcı taleplerini önceliklerine göre çözümleyin.", metric: "256", metricLabel: "Açık destek talebi", action: "Talep Ata" },
-  raporlar: { title: "Raporlar", description: "Satış, satıcı, ürün ve operasyon performansını analiz edin.", metric: "18,6%", metricLabel: "Ciro büyümesi", action: "Rapor Oluştur" },
-  "site-yonetimi": { title: "Site Yönetimi", description: "Vitrin, menü, banner, mobil görünüm ve SEO alanlarını yönetin.", metric: "12", metricLabel: "Yayındaki vitrin alanı", action: "Vitrini Düzenle" },
-} as const;
-
-export type ModuleKey = keyof typeof modules;
+export const topSections:AdminSection[]=[
+ {id:"top-home-layout",title:"Ana Sayfa / Vitrin",description:"Anasite vitrin sıralamasını ve içerik bloklarını yönetin.",icon:"fa-table-cells-large",kind:"modules",top:true,metric:"12",metricLabel:"Aktif vitrin alanı"},
+ {id:"top-menu-layout",title:"Menü Yönetimi",description:"Web ve mobil navigasyon menülerini düzenleyin.",icon:"fa-bars-staggered",kind:"table",top:true,metric:"16",metricLabel:"Menü bağlantısı"},
+ {id:"top-footer-pages",title:"Footer / Yasal",description:"Footer kolonlarını ve yasal metin sayfalarını yönetin.",icon:"fa-file-lines",kind:"modules",top:true,metric:"9",metricLabel:"Yasal sayfa"},
+ {id:"top-ads",title:"Reklam Alanları",description:"Reklam konumlarını, tarihlerini ve görünürlük kurallarını yönetin.",icon:"fa-rectangle-ad",kind:"table",top:true,metric:"8",metricLabel:"Aktif reklam"},
+ {id:"top-product-ranking",title:"Ürün Sıralama",description:"Listeleme ve vitrin ürün sıralama kurallarını yönetin.",icon:"fa-arrow-down-wide-short",kind:"settings",top:true,metric:"6",metricLabel:"Aktif sıralama kuralı"},
+ {id:"top-announcements",title:"Duyurular",description:"Site geneli ve panel duyurularını yayınlayın.",icon:"fa-bullhorn",kind:"table",top:true,metric:"3",metricLabel:"Yayındaki duyuru"},
+ {id:"top-mobile-settings",title:"Mobil Ayarlar",description:"Mobil navigasyon, uygulama bannerı ve görünüm tercihlerini yönetin.",icon:"fa-mobile-screen-button",kind:"settings",top:true,metric:"2",metricLabel:"Mobil platform"},
+ {id:"top-installments",title:"Taksit Yönetimi",description:"Banka ve kart bazlı taksit seçeneklerini düzenleyin.",icon:"fa-credit-card",kind:"table",top:true,metric:"12",metricLabel:"Aktif banka kuralı"},
+ {id:"top-filter-standard",title:"Filtre Standardı",description:"Kategori filtrelerinin görünüm ve sıralama kurallarını belirleyin.",icon:"fa-filter-circle-xmark",kind:"settings",top:true,metric:"186",metricLabel:"Filtre seti"},
+ {id:"top-seo-pages",title:"SEO / Sayfalar",description:"Meta alanlarını, indeksleme ve yönlendirme kurallarını yönetin.",icon:"fa-magnifying-glass-chart",kind:"table",top:true,metric:"94",metricLabel:"SEO puanı"},
+ {id:"top-logs",title:"Log Yönetimi",description:"Panel işlemlerini ve köprü kayıtlarını denetleyin.",icon:"fa-clock-rotate-left",kind:"table",top:true,metric:"1.842",metricLabel:"Bugünkü log"},
+ {id:"top-site-settings",title:"Ana Site Ayarları",description:"Global site ayarlarını ve yayın seçeneklerini yönetin.",icon:"fa-sliders",kind:"settings",top:true,metric:"Canlı",metricLabel:"Yayın durumu"},
+ {id:"top-banner-layout",title:"Banner / Slider Yönetimi",description:"Web ve mobil banner görsellerini, sıralamayı ve hedefleri yönetin.",icon:"fa-images",kind:"modules",top:true,metric:"10",metricLabel:"Aktif banner"}
+];
+export const allSections=[...sideSections,...topSections];
