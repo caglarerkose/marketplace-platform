@@ -1,0 +1,1 @@
+import Image from"next/image";export function BrandLogo({className="brand-wordmark"}:{className?:string}){return <Image className={className} src="/img/anayazi.png" width={235} height={48} alt="BişeyEksik"/>}

@@ -1,5 +1,5 @@
 export type PriceMode="normal"|"percent"|"cart-discount";
-export type Product={id:string;name:string;image:string;category:string;rating:number;reviewCount:number;priceMode:PriceMode;originalPrice:number;discountPercent?:number;price:number;badge:string;stock:number};
+export type Product={id:string;name:string;image:string;category:string;rating:number;reviewCount:number;priceMode:PriceMode;originalPrice:number;discountPercent?:number;price:number;badge:string;stock:number;isFastDelivery?:boolean;isFreeShipping?:boolean;hasDiscount?:boolean;gallery?:string[];variants?:{id:string;label:string;price:number;stock:number}[]};
 export const categories=["Elektronik","Ev & Yaşam","Moda","Anne & Çocuk","Kozmetik","Oto & Yapı","Hırdavat","Spor & Outdoor","Kitap & Hobi","Ofis & Kırtasiye","Pet Shop","Süper Fırsatlar"];
 export const categoryCards=[
  ["Elektronik","/img/elektronik.jpg"],["Ev & Yaşam","/img/mobilya.jpg"],["Moda","/img/canta.jpg"],["Beyaz Eşya","/img/beyazesya.jpg"],["Kozmetik","/img/Kozmetik.jpg"],["Spor & Outdoor","/img/Spor.jpg"],["Bilgisayar","/img/bilgisayar.jpg"],["Temizlik","/img/temizlik.jpg"],["Küçük Ev Aletleri","/img/kucukevaletleri.jpg"]
@@ -19,3 +19,5 @@ export const products:Product[]=[
  {id:"spor-ayakkabi",name:"Unisex Günlük Spor Ayakkabı",image:"/img/urun11.jpg",category:"Spor & Outdoor",rating:4.7,reviewCount:391,priceMode:"percent",originalPrice:2400,discountPercent:25,price:1799,badge:"%25 İndirim",stock:26}
 ];
 export const formatTL=(value:number)=>new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY",maximumFractionDigits:0}).format(value);
+export const productFlags=(p:Product)=>({isFastDelivery:p.isFastDelivery??p.stock>=10,isFreeShipping:p.isFreeShipping??true,hasDiscount:p.hasDiscount??p.priceMode!=="normal"});
+export const productGallery=(p:Product)=>p.gallery?.length?p.gallery:[p.image,"/img/urun12.jpg","/img/urun13.jpg","/img/urun14.jpg","/img/urun15.jpg"];

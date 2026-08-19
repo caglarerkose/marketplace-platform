@@ -1,1 +1,102 @@
-"use client";import Image from"next/image";import{notFound,useParams,useRouter}from"next/navigation";import{useState}from"react";import{products,formatTL}from"@/data/catalog";import{useStore}from"@/components/store-provider";import{ProductRow}from"@/components/product-row";export default function Detail(){const{slug}=useParams<{slug:string}>(),router=useRouter(),p=products.find(x=>x.id===slug),[tab,setTab]=useState("Açıklama"),[variant,setVariant]=useState("Standart Paket"),{addCart,toggleFavorite,favorites}=useStore();if(!p)return notFound();const buy=()=>{addCart(p);router.push("/odeme")};return <div className="container page detail-page"><div className="breadcrumb">Ana Sayfa › {p.category} › {p.name}</div><div className="detail-layout"><section className="gallery-card"><div className="gallery-hero"><button className={`fav ${favorites.includes(p.id)?"active":""}`} onClick={()=>toggleFavorite(p.id)}><i className="fa-solid fa-heart"/></button><span className="product-badge"><i className="fa-solid fa-bolt"/>{p.badge}</span><Image src={p.image} width={520} height={520} priority alt={p.name}/><button className="gallery-prev">‹</button><button className="gallery-next">›</button><small>1 / 5</small></div><div className="thumbs">{[p.image,"/img/urun12.jpg","/img/urun13.jpg","/img/urun14.jpg","/img/urun15.jpg"].map((x,i)=><button className={i===0?"active":""} key={x}><Image src={x} width={68} height={68} alt="Ürün görünümü"/></button>)}</div></section><section className="detail-info"><div className="detail-meta"><span>{p.category}</span><small>Son 24 saatte 128 kişi görüntüledi</small></div><h1>{p.name}</h1><div className="detail-rating"><b>{p.rating}</b> ★★★★★ <a>{p.reviewCount} Değerlendirme</a><a>42 Soru-Cevap</a></div><div className="seller-strip"><i className="fa-solid fa-store"/><div><small>Satıcı</small><strong>TeknoMarket <em>9.7</em></strong></div><span>Güvenli Satıcı</span><button>Takip Et</button></div><div className="detail-price"><small>Avantajlı BişeyEksik fiyatı</small>{p.price!==p.originalPrice&&<del>{formatTL(p.originalPrice)}</del>}<strong>{formatTL(p.price)}</strong><span>Bugün kargoda</span></div><div className="campaign-stack"><div><i className="fa-solid fa-basket-shopping"/><span><strong>Sepette İndirim</strong>Seçili ürünlerde ekstra avantaj</span></div><div><i className="fa-solid fa-credit-card"/><span><strong>Taksit Fırsatı</strong>Peşin fiyatına 6 taksit</span></div></div><div className="variants"><strong>Paket Seçimi</strong>{["Standart Paket","Avantaj Paketi","Premium Paket"].map(x=><button className={variant===x?"active":""} onClick={()=>setVariant(x)} key={x}>{x}</button>)}</div><div className="detail-actions"><div><small>Ödenecek Tutar</small><strong>{formatTL(p.price)}</strong></div><button className="buy" onClick={buy}><i className="fa-solid fa-bolt"/>Hemen Al</button><button className="add" onClick={()=>addCart(p)}><i className="fa-solid fa-cart-shopping"/>Sepete Ekle</button></div><div className="delivery"><span><i className="fa-solid fa-truck-fast"/><b>Yarın Kapında</b>Hızlı teslimat</span><span><i className="fa-solid fa-rotate-left"/><b>14 Gün İade</b>Kolay iade</span></div><div className="mini-info"><span>Stok Kodu<b>BX004300</b></span><span>Stok Adedi<b>{p.stock} adet</b></span><span>Garanti<b>2 Yıl</b></span></div></section><aside className="detail-side"><article><h3>Ürünün Kampanyaları</h3><p>350 TL ve üzeri kargo bedava</p><p>Sepette ekstra avantajlı fiyat</p><p>Seçili kartlara taksit fırsatı</p></article><article className="premium"><h3>BişeyEksik Premium</h3><p>Ücretsiz kargo ve özel fırsatlar.</p><button>Premium’u Keşfet</button></article><article><h3>TeknoMarket</h3><p>9.7 satıcı puanı · Hızlı gönderim</p><button>Mağazaya Git</button></article></aside></div><section className="extra"><nav>{["Açıklama","Yorumlar","Soru-Cevap","İade & Kargo"].map(x=><button className={tab===x?"active":""} onClick={()=>setTab(x)} key={x}>{x}</button>)}</nav><div><h2>Ürün {tab}</h2><p>Bu ürün BişeyEksik kalite standartlarına uygun olarak listelenmiştir. Ayrıntılı bilgi, kullanıcı değerlendirmeleri ve satış sonrası destek seçenekleri bu bölümde yer alır.</p></div></section><ProductRow title="Benzer Ürünler" products={products.filter(x=>x.id!==p.id).slice(0,6)} tone="blue"/></div>}
+"use client";
+
+import Image from "next/image";
+import { notFound, useParams, useRouter } from "next/navigation";
+import { MouseEvent, TouchEvent, useState } from "react";
+import { BrandLogo } from "@/components/brand-logo";
+import { ProductRow } from "@/components/product-row";
+import { ProductTitle } from "@/components/product-title";
+import { useStore } from "@/components/store-provider";
+import { formatTL, productGallery, products } from "@/data/catalog";
+
+const reviews = [
+  ["M*** K***", "Ürün çok hızlı ve özenli paketlenmişti. Beklentilerimi tamamen karşıladı."],
+  ["N*** S***", "Kalitesi gerçekten çok iyi, günlük kullanımda oldukça başarılı."],
+  ["S*** N***", "Orijinal kutusunda ve sağlam şekilde elime ulaştı. Tavsiye ederim."],
+];
+
+export default function ProductDetailPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const router = useRouter();
+  const product = products.find((item) => item.id === slug);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [variant, setVariant] = useState("Standart Paket");
+  const [following, setFollowing] = useState(false);
+  const [touchX, setTouchX] = useState<number | null>(null);
+  const [zoom, setZoom] = useState({ active: false, x: 50, y: 50 });
+  const { addCart, toggleFavorite, favorites } = useStore();
+
+  if (!product) return notFound();
+
+  const gallery = productGallery(product);
+  const moveGallery = (direction: number) =>
+    setGalleryIndex((current) => (current + direction + gallery.length) % gallery.length);
+  const buyNow = () => { addCart(product); router.push("/odeme"); };
+  const handleTouchEnd = (event: TouchEvent) => {
+    if (touchX === null) return;
+    const distance = (event.changedTouches[0]?.clientX ?? touchX) - touchX;
+    if (Math.abs(distance) > 45) moveGallery(distance < 0 ? 1 : -1);
+    setTouchX(null);
+  };
+  const handleZoom = (event: MouseEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    setZoom({ active: true, x: ((event.clientX - bounds.left) / bounds.width) * 100, y: ((event.clientY - bounds.top) / bounds.height) * 100 });
+  };
+
+  return (
+    <div className="container page detail-page trendy-detail">
+      <div className="breadcrumb">Ana Sayfa <i className="fa-solid fa-chevron-right" /> {product.category} <i className="fa-solid fa-chevron-right" /> {product.name}</div>
+      <div className="trendy-product-shell">
+        <section className="trendy-gallery-column">
+          <div className={`trendy-main-image ${zoom.active ? "is-zoomed" : ""}`} onMouseMove={handleZoom} onMouseLeave={() => setZoom((current) => ({ ...current, active: false }))} onTouchStart={(event) => setTouchX(event.touches[0]?.clientX ?? null)} onTouchEnd={handleTouchEnd}>
+            <span className="gallery-campaign">YARIN KARGODA</span>
+            <button className={`detail-favorite ${favorites.includes(product.id) ? "active" : ""}`} onClick={() => toggleFavorite(product.id)} aria-label="Favoriye ekle"><i className="fa-solid fa-heart" /></button>
+            <Image key={gallery[galleryIndex]} src={gallery[galleryIndex]} width={560} height={560} priority style={{ transformOrigin: `${zoom.x}% ${zoom.y}%` }} alt={`${product.name} görünüm ${galleryIndex + 1}`} />
+            <button className="gallery-prev" onClick={() => moveGallery(-1)} aria-label="Önceki görsel">‹</button>
+            <button className="gallery-next" onClick={() => moveGallery(1)} aria-label="Sonraki görsel">›</button>
+            <small>{galleryIndex + 1} / {gallery.length}</small>
+          </div>
+          <div className="trendy-thumbs">
+            {gallery.map((image, index) => <button key={`${image}-${index}`} className={index === galleryIndex ? "active" : ""} onMouseEnter={() => setGalleryIndex(index)} onFocus={() => setGalleryIndex(index)} onClick={() => setGalleryIndex(index)}><Image src={image} width={64} height={64} alt={`Ürün görseli ${index + 1}`} /></button>)}
+          </div>
+        </section>
+
+        <section className="trendy-buy-column">
+          <div className="detail-heading"><h1><ProductTitle name={product.name} /></h1></div>
+          <div className="trendy-rating"><b>{product.rating}</b><span>★★★★★</span><button>{product.reviewCount} Değerlendirme</button><button>42 Soru & Cevap</button></div>
+          <div className="trendy-price">{product.price !== product.originalPrice && <del>{formatTL(product.originalPrice)}</del>}<strong>{formatTL(product.price)}</strong></div>
+          <div className="trendy-benefit"><i className="fa-solid fa-truck-fast" /><b>Hızlı Teslimat</b> Yarın kargoda</div>
+          <div className="trendy-campaigns">
+            <h3>Ürünün Kampanyaları</h3>
+            <button><i className="fa-solid fa-box" /><span><b>350 TL ve Üzeri Kargo Bedava</b>Satıcı karşılar</span><i className="fa-solid fa-chevron-right" /></button>
+            <button><i className="fa-solid fa-tag" /><span><b>Sepette ekstra avantajlı fiyat</b>Fırsatı sepette gör</span><i className="fa-solid fa-chevron-right" /></button>
+            <button><i className="fa-solid fa-credit-card" /><span><b>Peşin fiyatına 6 taksit</b>Seçili banka kartlarında</span><i className="fa-solid fa-chevron-right" /></button>
+          </div>
+          <div className="variants trendy-variants"><strong>Paket Seçimi</strong>{["Standart Paket", "Avantaj Paketi", "Premium Paket"].map((item) => <button className={variant === item ? "active" : ""} onClick={() => setVariant(item)} key={item}>{item}</button>)}</div>
+          <div className="detail-actions trendy-actions"><div><small>Ödenecek Tutar</small><strong>{formatTL(product.price)}</strong></div><button className="buy" onClick={buyNow}><i className="fa-solid fa-bolt" />Hemen Al</button><button className="add" onClick={() => addCart(product)}><i className="fa-solid fa-cart-shopping" />Sepete Ekle</button></div>
+          <div className="trendy-delivery-box"><i className="fa-solid fa-location-dot" /> Konumunu seç, tahmini teslimat tarihini öğren <i className="fa-solid fa-chevron-right" /></div>
+          <h3 className="features-title">Öne Çıkan Özellikler</h3>
+          <div className="trendy-features"><span>Garanti Süresi<b>2 Yıl</b></span><span>Stok Adedi<b>{product.stock} adet</b></span><span>Gönderim<b>Hızlı Teslimat</b></span><span>Garanti Tipi<b>Distribütör</b></span></div>
+        </section>
+
+        <aside className="trendy-seller-column">
+          <article className="seller-card"><header><div><b>TeknoMarket</b><span>9.7</span><small>5,3M Takipçi</small></div><i className="fa-solid fa-circle-check" /></header><p><i className="fa-solid fa-truck-fast" /> Hızlı Satıcı</p><button onClick={() => setFollowing(!following)}><i className="fa-solid fa-store" />{following ? "Takip Ediliyor" : "Takip Et"}</button><button><i className="fa-solid fa-message" />Satıcı Soruları (1628)<i className="fa-solid fa-chevron-right" /></button><a href="/arama?q=TeknoMarket">MAĞAZAYA GİT <i className="fa-solid fa-chevron-right" /></a></article>
+          <small className="other-seller-title">ÜRÜNÜN DİĞER SATICILARI</small>
+          {["Vatan Bilgisayar", "BiDoluŞey"].map((seller, index) => <article className="other-seller" key={seller}><b>{seller} <em>{index ? "8.8" : "8.9"}</em></b><p><i className="fa-solid fa-truck-fast" /> Sipariş verirsen yarın kargoda!</p><small>Kargo Bedava</small><strong>{formatTL(product.price + (index + 1) * 250)}</strong></article>)}
+        </aside>
+      </div>
+
+      <section className="trendy-description"><nav><button className="active">Ürün Bilgileri</button><button>Ürün Özellikleri</button><button>İade Koşulları</button></nav><div><h2><ProductTitle name={product.name} /></h2><p>Bu ürün, yüksek kalite standartlarına uygun olarak listelenmiştir. Güvenli alışveriş, hızlı teslimat ve kolay iade avantajlarıyla sunulur.</p><ul><li>Dayanıklı ve kaliteli malzeme</li><li>2 yıl garanti</li><li>14 gün içinde kolay iade</li><li>Güvenli ve özenli paketleme</li></ul></div></section>
+      <ProductRow title="Benzer Ürünler" products={products.filter((item) => item.id !== product.id).slice(0, 6)} tone="blue" />
+
+      <section className="trendy-reviews">
+        <h2>Ürün Değerlendirmeleri</h2>
+        <div className="review-summary"><span>★★★★★</span><b>{product.rating}</b><i /><strong>{product.reviewCount} Değerlendirme</strong><i /><strong>2977 Yorum</strong></div>
+        <div className="review-grid"><article className="review-insight"><h3><i className="fa-solid fa-wand-magic-sparkles" /> Değerlendirme Özeti</h3><ul><li>Ürünün kalitesi ve hızlı teslimatı kullanıcılar tarafından beğeniliyor.</li><li>Paketleme ve kullanım kolaylığı olumlu değerlendiriliyor.</li></ul></article>{reviews.map(([user, text]) => <article className="review-card" key={user}><span>★★★★★</span><small>{user} · 22 Mayıs 2026</small><p>{text}</p><footer><b>TeknoMarket</b> satıcısından alındı <i className="fa-regular fa-thumbs-up" /></footer></article>)}</div>
+        <button className="show-all">TÜM YORUMLARI GÖSTER <i className="fa-solid fa-chevron-right" /></button>
+      </section>
+
+      <section className="trendy-questions"><h2>Ürün Soru ve Cevapları</h2><nav>{["Tümü (578)", "Uyumluluk (430)", "Ürün İçeriği (29)", "Garanti Kapsamı (28)", "Kargo (15)"].map((item) => <button key={item}>{item} <i className="fa-solid fa-chevron-right" /></button>)}</nav><div>{["Ürün kutusunda garanti belgesi var mı?", "Hızlı teslimat hangi şehirlerde geçerli?", "Farklı renk seçeneği mevcut mu?"].map((question) => <article key={question}><b>{question}</b><small>M*** K*** · 14 Nisan 2026</small><p><BrandLogo className="inline-brand-logo" /> satıcısının cevabı</p><span>Merhaba, ürün açıklamasında belirtilen tüm özellikler gönderilen pakete dahildir.</span></article>)}</div></section>
+    </div>
+  );
+}
