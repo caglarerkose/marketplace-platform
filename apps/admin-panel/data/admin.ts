@@ -12,6 +12,8 @@ export const sideSections:AdminSection[]=[
  {id:"orders",title:"Siparişler",description:"Sipariş, teslimat, iptal ve iade süreçlerini izleyin.",icon:"fa-bag-shopping",kind:"table",metric:"24.657",metricLabel:"Günlük sipariş"},
  {id:"customers",title:"Müşteriler",description:"Müşteri segmentleri, davranışları ve destek geçmişi.",icon:"fa-user",kind:"table",metric:"1.234.567",metricLabel:"Toplam müşteri"},
  {id:"support",title:"Destek Talepleri",description:"Müşteri ve satıcı taleplerini önceliklerine göre çözümleyin.",icon:"fa-life-ring",badge:18,kind:"table",metric:"256",metricLabel:"Açık talep"},
+ {id:"admin-users",title:"Kullanıcılar",description:"Admin paneli kullanıcılarını, durumlarını ve erişim yetkilerini yönetin.",icon:"fa-users-gear",kind:"table",metric:"4",metricLabel:"Panel kullanıcısı"},
+ {id:"audit-logs",title:"İşlem Logları",description:"Kullanıcı kodu, işlem, tarih, saat ve risk detaylarını denetleyin.",icon:"fa-clock-rotate-left",kind:"table",metric:"1.842",metricLabel:"Denetim kaydı"},
  {id:"reports",title:"Raporlar",description:"Satış, satıcı, ürün ve operasyon performansını analiz edin.",icon:"fa-chart-line",kind:"modules",metric:"18,6%",metricLabel:"Ciro büyümesi"},
  {id:"settings",title:"Sistem Ayarları",description:"Platform davranışları, bildirimler ve yönetici yetkilerini düzenleyin.",icon:"fa-gear",kind:"settings",metric:"Aktif",metricLabel:"Sistem durumu"}
 ];
