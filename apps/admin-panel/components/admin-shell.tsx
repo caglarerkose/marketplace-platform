@@ -45,6 +45,7 @@ type Ctx = {
 };
 const Context = createContext<Ctx | null>(null);
 const backendReadySections = new Set(["admin-users", "audit-logs"]);
+const superAdminSections = new Set(["admin-users", "audit-logs"]);
 export const useAdmin = () => {
   const v = useContext(Context);
   if (!v) throw new Error("Admin context missing");
@@ -426,13 +427,37 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [active, setActiveState] = useState("overview"),
     [menu, setMenu] = useState(false),
     [toast, setToast] = useState(""),
-    [drawer, setDrawer] = useState<DrawerRequest | null>(null);
+    [drawer, setDrawer] = useState<DrawerRequest | null>(null),
+    [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null),
+    [accessDenied, setAccessDenied] = useState(false);
   useEffect(() => {
-    const s = localStorage.getItem("biseyeksik_admin_active");
-    if (s && allSections.some((x) => x.id === s)) setActiveState(s);
+    let cancelled = false;
+    const loadAccess = async () => {
+      const response = await fetch("/api/admin/me", { cache: "no-store" });
+      if (!response.ok || cancelled) return;
+      const result = (await response.json()) as { isSuperAdmin: boolean };
+      setIsSuperAdmin(result.isSuperAdmin);
+      const saved = localStorage.getItem("biseyeksik_admin_active");
+      if (saved && allSections.some((section) => section.id === saved)) {
+        if (result.isSuperAdmin || !superAdminSections.has(saved)) {
+          setActiveState(saved);
+        } else {
+          localStorage.setItem("biseyeksik_admin_active", "overview");
+        }
+      }
+    };
+    void loadAccess();
+    return () => {
+      cancelled = true;
+    };
   }, []);
   const setActive = (id: string) => {
     if (allSections.some((x) => x.id === id)) {
+      if (superAdminSections.has(id) && isSuperAdmin !== true) {
+        if (isSuperAdmin === false) setAccessDenied(true);
+        setMenu(false);
+        return;
+      }
       setActiveState(id);
       localStorage.setItem("biseyeksik_admin_active", id);
       setMenu(false);
@@ -589,6 +614,35 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <button className="menu-backdrop" onClick={() => setMenu(false)} />
         )}
         <main className="main">{children}</main>
+        {accessDenied && (
+          <div
+            className="admin-confirm-backdrop"
+            role="presentation"
+            onMouseDown={() => setAccessDenied(false)}
+          >
+            <section
+              className="admin-confirm-modal"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="access-denied-title"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="confirm-brand">
+                <Image src="/img/anayazi.png" width={174} height={35} alt="BişeyEksik" />
+              </div>
+              <div className="confirm-icon">
+                <i className="fa-solid fa-lock" />
+              </div>
+              <h2 id="access-denied-title">Yetkisiz erişim</h2>
+              <p>Bu işlemi yapmaya yetkili değilsiniz.</p>
+              <div className="confirm-actions confirm-actions-single">
+                <button className="btn primary" onClick={() => setAccessDenied(false)}>
+                  <i className="fa-solid fa-check" /> Tamam
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
         <div
           className={`drawer ${drawer ? "active" : ""}`}
           onClick={() => setDrawer(null)}
