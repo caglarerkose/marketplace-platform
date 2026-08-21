@@ -1,0 +1,16 @@
+function requirePublicEnvironmentVariable(
+  name: "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Supabase bağlantısı eksik: ${name}`);
+  }
+  return value;
+}
+
+export const supabaseUrl = requirePublicEnvironmentVariable(
+  "NEXT_PUBLIC_SUPABASE_URL",
+);
+export const supabasePublishableKey = requirePublicEnvironmentVariable(
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+);

@@ -44,6 +44,7 @@ type Ctx = {
   logAction: (m: string, s: string, r?: string) => void;
 };
 const Context = createContext<Ctx | null>(null);
+const backendReadySections = new Set(["admin-users", "audit-logs"]);
 export const useAdmin = () => {
   const v = useContext(Context);
   if (!v) throw new Error("Admin context missing");
@@ -520,6 +521,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             >
               <i className="fa-regular fa-circle-question" />
             </button>
+            <form action="/api/admin/logout" method="post">
+              <button
+                className="icon-btn"
+                type="submit"
+                title="Güvenli çıkış"
+                aria-label="Güvenli çıkış"
+              >
+                <i className="fa-solid fa-arrow-right-from-bracket" />
+              </button>
+            </form>
             <div className="admin-user">
               <div className="avatar">Ç</div>
               <div>
@@ -540,6 +551,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <i className={`fa-solid ${x.icon}`} />
                 {x.title}
                 {x.badge && <span className="nav-badge">{x.badge}</span>}
+                {backendReadySections.has(x.id) && (
+                  <span
+                    className="backend-ready-check"
+                    title="Backend bağlantısı tamamlandı"
+                    aria-label="Backend bağlantısı tamamlandı"
+                  >
+                    <i className="fa-solid fa-check" />
+                  </span>
+                )}
               </button>
             ))}
           </nav>

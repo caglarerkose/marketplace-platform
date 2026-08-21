@@ -1,187 +1,54 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAdmin } from "./admin-shell";
 
 type AuditEntry = {
-  id?: string;
-  date: string;
-  user?: string;
-  userCode?: string;
+  id: number;
+  actor_user_code: string | null;
+  action: string;
   module: string;
-  message: string;
-  risk: string;
-  session?: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  risk: "info" | "warning" | "critical";
+  details: Record<string, unknown>;
+  created_at: string;
 };
-const initialLogs: AuditEntry[] = [
-  {
-    id: "LOG-24851",
-    date: "20.08.2026 11:42:18",
-    user: "Çağlar Erkose",
-    userCode: "SUPER-001",
-    module: "Kullanıcı Yetkileri",
-    message: "ADM-1003 kullanıcısına Ürün Onay yetkisi verildi",
-    risk: "info",
-    session: "WEB-7F31",
-  },
-  {
-    id: "LOG-24850",
-    date: "20.08.2026 11:36:04",
-    user: "Ayşe Yılmaz",
-    userCode: "ADM-1002",
-    module: "Destek",
-    message: "#STK-84521 destek talebi yanıtlandı",
-    risk: "info",
-    session: "WEB-2A18",
-  },
-  {
-    id: "LOG-24849",
-    date: "20.08.2026 10:58:37",
-    user: "Mehmet Kaya",
-    userCode: "ADM-1003",
-    module: "Ürün Onay",
-    message: "8690000000000 barkodlu ürün revizeye gönderildi",
-    risk: "critical",
-    session: "WEB-91BC",
-  },
-];
 
 export function AdminAuditPanel() {
-  const [logs, setLogs] = useState<AuditEntry[]>(initialLogs);
+  const { notify } = useAdmin();
+  const [logs, setLogs] = useState<AuditEntry[]>([]);
   const [query, setQuery] = useState("");
   const [risk, setRisk] = useState("all");
-  const read = () => {
-    const saved: AuditEntry[] = JSON.parse(
-      localStorage.getItem("biseyeksik_admin_audit_v1") || "[]",
-    );
-    setLogs([...saved, ...initialLogs]);
-  };
-  useEffect(read, []);
-  const filtered = useMemo(
-    () =>
-      logs.filter((entry) => {
-        const matchesQuery =
-          `${entry.userCode} ${entry.user} ${entry.module} ${entry.message}`
-            .toLocaleLowerCase("tr-TR")
-            .includes(query.toLocaleLowerCase("tr-TR"));
-        return matchesQuery && (risk === "all" || entry.risk === risk);
-      }),
-    [logs, query, risk],
-  );
+  const [loading, setLoading] = useState(true);
+  const read = useCallback(async () => {
+    setLoading(true);
+    const response = await fetch("/api/admin/audit-logs", { cache: "no-store" });
+    const result = await response.json();
+    if (!response.ok) {
+      notify(result.error || "İşlem logları alınamadı");
+      setLoading(false);
+      return;
+    }
+    setLogs(result.logs);
+    setLoading(false);
+  }, [notify]);
+  useEffect(() => { void read(); }, [read]);
 
-  return (
-    <>
-      <div className="page-head">
-        <div className="page-title">
-          <h1>İşlem Logları</h1>
-          <p>
-            Panel kullanıcılarının yaptığı işlemleri kullanıcı kodu, tarih, saat
-            ve oturum bilgisiyle inceleyin.
-          </p>
-        </div>
-        <div className="head-actions">
-          <button className="btn" onClick={read}>
-            <i className="fa-solid fa-rotate" /> Yenile
-          </button>
-          <button className="btn primary" onClick={() => window.print()}>
-            <i className="fa-solid fa-file-export" /> Dışa Aktar
-          </button>
-        </div>
-      </div>
-      <div className="audit-kpis">
-        <article>
-          <i className="fa-solid fa-list-check" />
-          <span>
-            Toplam Kayıt<b>{logs.length}</b>
-          </span>
-        </article>
-        <article>
-          <i className="fa-solid fa-triangle-exclamation" />
-          <span>
-            Kritik İşlem
-            <b>{logs.filter((entry) => entry.risk === "critical").length}</b>
-          </span>
-        </article>
-        <article>
-          <i className="fa-solid fa-users" />
-          <span>
-            Aktif Kullanıcı
-            <b>
-              {new Set(logs.map((entry) => entry.userCode || entry.user)).size}
-            </b>
-          </span>
-        </article>
-      </div>
-      <div className="card content-table audit-table">
-        <div className="audit-toolbar">
-          <label>
-            <i className="fa-solid fa-magnifying-glass" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Kullanıcı kodu, modül veya işlem ara"
-            />
-          </label>
-          <select
-            value={risk}
-            onChange={(event) => setRisk(event.target.value)}
-          >
-            <option value="all">Tüm riskler</option>
-            <option value="info">Bilgi</option>
-            <option value="critical">Kritik</option>
-          </select>
-        </div>
-        <div className="card-body table-scroll">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Log ID</th>
-                <th>Tarih / Saat</th>
-                <th>Kullanıcı</th>
-                <th>Kod</th>
-                <th>Modül</th>
-                <th>İşlem Detayı</th>
-                <th>Oturum</th>
-                <th>Risk</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length ? (
-                filtered.map((entry, index) => (
-                  <tr key={`${entry.id || entry.date}-${index}`}>
-                    <td>
-                      <code>
-                        {entry.id ||
-                          `LOCAL-${String(index + 1).padStart(4, "0")}`}
-                      </code>
-                    </td>
-                    <td>{entry.date}</td>
-                    <td>{entry.user || "Super Admin"}</td>
-                    <td>
-                      <code>{entry.userCode || "SUPER-001"}</code>
-                    </td>
-                    <td>
-                      <span className="pill blue">{entry.module}</span>
-                    </td>
-                    <td>{entry.message}</td>
-                    <td>{entry.session || "LOCAL-DEMO"}</td>
-                    <td>
-                      <span
-                        className={`pill ${entry.risk === "critical" ? "red" : "green"}`}
-                      >
-                        {entry.risk === "critical" ? "Kritik" : "Bilgi"}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8}>Filtreye uygun log kaydı bulunamadı.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
-  );
+  const filtered = useMemo(() => logs.filter((entry) => {
+    const matchesQuery = `${entry.actor_user_code} ${entry.module} ${entry.action} ${entry.entity_id}`
+      .toLocaleLowerCase("tr-TR")
+      .includes(query.toLocaleLowerCase("tr-TR"));
+    return matchesQuery && (risk === "all" || entry.risk === risk);
+  }), [logs, query, risk]);
+  const formatDate = (value: string) => new Intl.DateTimeFormat("tr-TR", {
+    dateStyle: "short",
+    timeStyle: "medium",
+  }).format(new Date(value));
+
+  return <>
+    <div className="page-head"><div className="page-title"><h1>İşlem Logları</h1><p>Supabase üzerinde değiştirilemez işlem geçmişini kullanıcı kodu ve zaman bilgisiyle inceleyin.</p></div><div className="head-actions"><button className="btn" onClick={() => void read()}><i className="fa-solid fa-rotate" /> Yenile</button><button className="btn primary" onClick={() => window.print()}><i className="fa-solid fa-file-export" /> Dışa Aktar</button></div></div>
+    <div className="audit-kpis"><article><i className="fa-solid fa-list-check" /><span>Toplam Kayıt<b>{logs.length}</b></span></article><article><i className="fa-solid fa-triangle-exclamation" /><span>Kritik İşlem<b>{logs.filter((entry) => entry.risk === "critical").length}</b></span></article><article><i className="fa-solid fa-users" /><span>İşlem Yapan<b>{new Set(logs.map((entry) => entry.actor_user_code).filter(Boolean)).size}</b></span></article></div>
+    <div className="card content-table audit-table"><div className="audit-toolbar"><label><i className="fa-solid fa-magnifying-glass" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Kullanıcı kodu, modül veya işlem ara" /></label><select value={risk} onChange={(event) => setRisk(event.target.value)}><option value="all">Tüm riskler</option><option value="info">Bilgi</option><option value="warning">Uyarı</option><option value="critical">Kritik</option></select></div><div className="card-body table-scroll"><table className="table"><thead><tr><th>Log ID</th><th>Tarih / Saat</th><th>Kullanıcı Kodu</th><th>Modül</th><th>İşlem Detayı</th><th>Kayıt</th><th>Risk</th></tr></thead><tbody>{loading?<tr><td colSpan={7}>Loglar yükleniyor…</td></tr>:filtered.length?filtered.map((entry) => <tr key={entry.id}><td><code>LOG-{String(entry.id).padStart(6, "0")}</code></td><td>{formatDate(entry.created_at)}</td><td><code>{entry.actor_user_code || "SYSTEM"}</code></td><td><span className="pill blue">{entry.module}</span></td><td>{entry.action}</td><td>{entry.entity_type || "—"}{entry.entity_id ? ` · ${entry.entity_id.slice(0, 12)}` : ""}</td><td><span className={`pill ${entry.risk === "critical" ? "red" : entry.risk === "warning" ? "yellow" : "green"}`}>{entry.risk === "critical" ? "Kritik" : entry.risk === "warning" ? "Uyarı" : "Bilgi"}</span></td></tr>):<tr><td colSpan={7}>Filtreye uygun log kaydı bulunamadı.</td></tr>}</tbody></table></div></div>
+  </>;
 }
