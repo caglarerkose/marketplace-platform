@@ -6,7 +6,7 @@ import { z } from "zod";
 const createUserSchema = z.object({
   name: z.string().trim().min(2).max(100),
   email: z.string().trim().email().max(254),
-  password: z.string().min(12).max(128),
+  password: z.string().min(1),
   permissions: z.array(z.enum(["view", "support", "product_approval"])).min(1),
 });
 
@@ -33,7 +33,9 @@ export async function GET() {
     return {
       id: row.user_id,
       code: row.user_code,
-      name: profile?.display_name || authData.user?.user_metadata?.display_name || "Panel Kullanıcısı",
+      name: row.is_super_admin
+        ? "SUPERADMIN"
+        : profile?.display_name || authData.user?.user_metadata?.display_name || "Panel Kullanıcısı",
       email: authData.user?.email || "",
       permissions: row.is_super_admin
         ? ["view", "support", "product_approval"]
@@ -58,6 +60,32 @@ export async function POST(request: Request) {
   }
 
   const adminClient = createSupabaseAdminClient();
+  const { data: existingAdmins, error: existingAdminsError } = await adminClient
+    .from("admin_users")
+    .select("user_id");
+  if (existingAdminsError) {
+    return NextResponse.json({ error: "Mevcut kullanıcılar kontrol edilemedi." }, { status: 500 });
+  }
+  const adminIds = (existingAdmins || []).map((user) => user.user_id);
+  if (adminIds.length) {
+    const { data: profiles, error: profilesError } = await adminClient
+      .from("profiles")
+      .select("display_name")
+      .in("id", adminIds);
+    if (profilesError) {
+      return NextResponse.json({ error: "Mevcut kullanıcılar kontrol edilemedi." }, { status: 500 });
+    }
+    const requestedName = parsed.data.name.trim().toLocaleLowerCase("tr-TR");
+    const duplicateName = (profiles || []).some(
+      (profile) => profile.display_name?.trim().toLocaleLowerCase("tr-TR") === requestedName,
+    );
+    if (duplicateName) {
+      return NextResponse.json(
+        { error: "Bu ad soyad ile kayıtlı bir panel kullanıcısı zaten mevcut." },
+        { status: 409 },
+      );
+    }
+  }
   const { data: codeData, error: codeError } = await adminClient.rpc("next_admin_user_code");
   if (codeError || !codeData) {
     return NextResponse.json({ error: "Kullanıcı kodu üretilemedi." }, { status: 500 });

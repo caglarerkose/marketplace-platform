@@ -3,8 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { categories, products } from "@/data/catalog";
 import { useStore } from "./store-provider";
+type HeaderCategory={id:string;name:string;slug:string};
 const prompts = [
   "Ürün, kategori veya marka ara",
   "Görselle ara",
@@ -17,12 +17,12 @@ export function SiteHeader() {
     [query, setQuery] = useState(""),
     [mobileMenu, setMobileMenu] = useState(false),
     [prompt, setPrompt] = useState(""),
+    [categories, setCategories] = useState<HeaderCategory[]>([]),
     [productScrolled, setProductScrolled] = useState(false),
     inner = path !== "/",
     productDetail = path.startsWith("/urun/"),
-    activeProduct = productDetail
-      ? products.find((item) => path.endsWith(`/${item.id}`))
-      : undefined;
+    activeProduct = productDetail ? {id:decodeURIComponent(path.split("/").pop()||""),name:"Ürün"} : undefined;
+  useEffect(()=>{fetch("/api/catalog-categories").then(async response=>{const result=await response.json();if(response.ok)setCategories(result.categories||[])}).catch(()=>{})},[]);
   useEffect(() => {
     let word = 0,
       char = 0,
@@ -194,18 +194,15 @@ export function SiteHeader() {
             </Link>
             <div className="category-mega-menu">
               {categories.slice(0, 9).map((category, index) => (
-                <section key={category}>
+                <section key={category.id}>
                   <Link
-                    href={`/kategori/${encodeURIComponent(category.toLowerCase().replaceAll(" ", "-"))}`}
+                    href={`/kategori/${category.slug}`}
                   >
                     <i
                       className={`fa-solid ${["fa-laptop", "fa-house", "fa-shirt", "fa-baby", "fa-spray-can-sparkles", "fa-car", "fa-screwdriver-wrench", "fa-person-running", "fa-book"][index]}`}
                     />
-                    {category}
+                    {category.name}
                   </Link>
-                  <span>Yeni Ürünler</span>
-                  <span>Çok Satanlar</span>
-                  <span>Fırsat Ürünleri</span>
                 </section>
               ))}
             </div>
@@ -213,10 +210,10 @@ export function SiteHeader() {
           <nav>
             {categories.map((c) => (
               <Link
-                key={c}
-                href={`/kategori/${encodeURIComponent(c.toLowerCase().replaceAll(" ", "-"))}`}
+                key={c.id}
+                href={`/kategori/${c.slug}`}
               >
-                {c}
+                {c.name}
               </Link>
             ))}
           </nav>
@@ -226,10 +223,10 @@ export function SiteHeader() {
             {categories.map((c) => (
               <Link
                 onClick={() => setMobileMenu(false)}
-                key={c}
-                href={`/kategori/${encodeURIComponent(c.toLowerCase().replaceAll(" ", "-"))}`}
+                key={c.id}
+                href={`/kategori/${c.slug}`}
               >
-                {c}
+                {c.name}
               </Link>
             ))}
           </div>

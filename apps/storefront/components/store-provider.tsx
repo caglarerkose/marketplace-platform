@@ -1,3 +1,93 @@
-"use client";import{createContext,useContext,useEffect,useMemo,useState}from"react";import type{Product}from"@/data/catalog";
-export type CartItem={product:Product;quantity:number;selected:boolean};type Store={cart:CartItem[];favorites:string[];addCart:(p:Product)=>void;removeCart:(id:string)=>void;quantity:(id:string,d:number)=>void;toggleSelected:(id:string)=>void;selectAll:(v:boolean)=>void;toggleFavorite:(id:string)=>void;toast:string;clearToast:()=>void;lastAdded:Product|null;closeAdded:()=>void;coupon:string;applyCoupon:(code:string)=>boolean};const C=createContext<Store|null>(null);
-export function StoreProvider({children}:{children:React.ReactNode}){const[cart,setCart]=useState<CartItem[]>([]),[favorites,setFavorites]=useState<string[]>([]),[toast,setToast]=useState(""),[lastAdded,setLastAdded]=useState<Product|null>(null),[coupon,setCoupon]=useState("");useEffect(()=>{try{setFavorites(JSON.parse(localStorage.getItem("bx-favorites")||"[]"));setCart(JSON.parse(localStorage.getItem("bx-cart")||"[]"));setCoupon(localStorage.getItem("bx-coupon")||"")}catch{}},[]);useEffect(()=>{localStorage.setItem("bx-cart",JSON.stringify(cart))},[cart]);const flash=(m:string)=>{setToast(m);setTimeout(()=>setToast(""),1800)};const toggleFavorite=(id:string)=>setFavorites(prev=>{const n=prev.includes(id)?prev.filter(x=>x!==id):[...prev,id];localStorage.setItem("bx-favorites",JSON.stringify(n));flash(prev.includes(id)?"Favorilerden çıkarıldı":"Favorilere eklendi");return n});const addCart=(p:Product)=>{setCart(prev=>{const has=prev.find(x=>x.product.id===p.id);return has?prev.map(x=>x.product.id===p.id?{...x,quantity:x.quantity+1}:x):[...prev,{product:p,quantity:1,selected:true}]});setLastAdded(p);flash("Ürün sepete eklendi")};const value=useMemo(()=>({cart,favorites,addCart,removeCart:(id:string)=>setCart(x=>x.filter(y=>y.product.id!==id)),quantity:(id:string,d:number)=>setCart(x=>x.map(y=>y.product.id===id?{...y,quantity:Math.max(1,y.quantity+d)}:y)),toggleSelected:(id:string)=>setCart(x=>x.map(y=>y.product.id===id?{...y,selected:!y.selected}:y)),selectAll:(v:boolean)=>setCart(x=>x.map(y=>({...y,selected:v}))),toggleFavorite,toast,clearToast:()=>setToast(""),lastAdded,closeAdded:()=>setLastAdded(null),coupon,applyCoupon:(code:string)=>{const valid=code.trim().toUpperCase()==="BISEY150";if(valid){setCoupon("BISEY150");localStorage.setItem("bx-coupon","BISEY150");flash("150 TL kupon uygulandı")}else flash("Kupon kodu geçersiz");return valid}}),[cart,favorites,toast,lastAdded,coupon]);return <C.Provider value={value}>{children}</C.Provider>};export const useStore=()=>{const v=useContext(C);if(!v)throw new Error("Store missing");return v};
+"use client";
+
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import type { Product } from "@/data/catalog";
+
+export type CartItem = { product: Product; quantity: number; selected: boolean };
+type ShoppingState = { cart: CartItem[]; favorites: string[]; favoriteProducts: Product[] };
+type Store = {
+  cart: CartItem[]; favorites: string[]; favoriteProducts: Product[];
+  addCart: (product: Product) => void; removeCart: (id: string) => void;
+  quantity: (id: string, delta: number) => void; toggleSelected: (id: string) => void;
+  selectAll: (selected: boolean) => void; toggleFavorite: (product: Product | string) => void;
+  toast: string; clearToast: () => void; lastAdded: Product | null; closeAdded: () => void;
+  coupon: string; applyCoupon: (code: string) => boolean;
+};
+const StoreContext = createContext<Store | null>(null);
+
+export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
+  const [toast, setToast] = useState("");
+  const [lastAdded, setLastAdded] = useState<Product | null>(null);
+  const [coupon, setCoupon] = useState("");
+  const authenticated = useRef(false);
+  const hydrated = useRef(false);
+
+  const flash = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 1800); };
+  const sync = (body: Record<string, unknown>) => {
+    if (!authenticated.current) return;
+    void fetch("/api/customer/shopping-state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then((response) => { if (!response.ok) flash("İşlem kaydedilemedi."); })
+      .catch(() => flash("İşlem kaydedilemedi."));
+  };
+
+  useEffect(() => {
+    try {
+      setCart(JSON.parse(localStorage.getItem("bx-cart") || "[]"));
+      setFavorites(JSON.parse(localStorage.getItem("bx-favorites") || "[]"));
+      setFavoriteProducts(JSON.parse(localStorage.getItem("bx-favorite-products") || "[]"));
+      setCoupon(localStorage.getItem("bx-coupon") || "");
+    } catch { /* Bozuk tarayıcı verisi alışveriş akışını engellememeli. */ }
+    void fetch("/api/customer/shopping-state").then(async (response) => {
+      if (!response.ok) return;
+      const state = (await response.json()) as ShoppingState;
+      authenticated.current = true;
+      setCart(state.cart); setFavorites(state.favorites); setFavoriteProducts(state.favoriteProducts);
+    }).finally(() => { hydrated.current = true; });
+  }, []);
+
+  useEffect(() => { if (hydrated.current) localStorage.setItem("bx-cart", JSON.stringify(cart)); }, [cart]);
+  useEffect(() => {
+    if (!hydrated.current) return;
+    localStorage.setItem("bx-favorites", JSON.stringify(favorites));
+    localStorage.setItem("bx-favorite-products", JSON.stringify(favoriteProducts));
+  }, [favorites, favoriteProducts]);
+
+  const toggleFavorite = (product: Product | string) => {
+    const id = typeof product === "string" ? product : product.id;
+    const removing = favorites.includes(id);
+    setFavorites((current) => removing ? current.filter((itemId) => itemId !== id) : [...current, id]);
+    if (typeof product !== "string") setFavoriteProducts((current) => removing ? current.filter((item) => item.id !== id) : [...current.filter((item) => item.id !== id), product]);
+    if (typeof product === "string") sync({ action: "toggle_favorite", slug: product });
+    else if (product.productId) sync({ action: "toggle_favorite", productId: product.productId });
+    flash(removing ? "Favorilerden çıkarıldı" : "Favorilere eklendi");
+  };
+  const addCart = (product: Product) => {
+    setCart((current) => { const existing = current.find((item) => item.product.id === product.id); return existing ? current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item) : [...current, { product, quantity: 1, selected: true }]; });
+    if (product.offerId) sync({ action: "add_cart", offerId: product.offerId });
+    setLastAdded(product); flash("Ürün sepete eklendi");
+  };
+  const removeCart = (id: string) => {
+    const item = cart.find((entry) => entry.product.id === id);
+    setCart((current) => current.filter((entry) => entry.product.id !== id));
+    if (item?.product.offerId) sync({ action: "remove_cart", offerId: item.product.offerId });
+  };
+  const quantity = (id: string, delta: number) => {
+    const item = cart.find((entry) => entry.product.id === id); if (!item) return;
+    const nextQuantity = Math.max(1, item.quantity + delta);
+    setCart((current) => current.map((entry) => entry.product.id === id ? { ...entry, quantity: nextQuantity } : entry));
+    if (item.product.offerId) sync({ action: "update_quantity", offerId: item.product.offerId, quantity: nextQuantity });
+  };
+  const toggleSelected = (id: string) => {
+    const item = cart.find((entry) => entry.product.id === id); if (!item) return;
+    setCart((current) => current.map((entry) => entry.product.id === id ? { ...entry, selected: !entry.selected } : entry));
+    if (item.product.offerId) sync({ action: "toggle_selected", offerId: item.product.offerId, selected: !item.selected });
+  };
+  const selectAll = (selected: boolean) => { setCart((current) => current.map((item) => ({ ...item, selected }))); sync({ action: "select_all", selected }); };
+
+  const value = useMemo<Store>(() => ({ cart, favorites, favoriteProducts, addCart, removeCart, quantity, toggleSelected, selectAll, toggleFavorite, toast, clearToast: () => setToast(""), lastAdded, closeAdded: () => setLastAdded(null), coupon, applyCoupon: (code: string) => { const valid = code.trim().toUpperCase() === "BISEY150"; if (valid) { setCoupon("BISEY150"); localStorage.setItem("bx-coupon", "BISEY150"); flash("150 TL kupon uygulandı"); } else flash("Kupon kodu geçersiz"); return valid; } }), [cart, favorites, favoriteProducts, toast, lastAdded, coupon]);
+  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
+}
+export const useStore = () => { const value = useContext(StoreContext); if (!value) throw new Error("Store missing"); return value; };

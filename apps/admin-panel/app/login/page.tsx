@@ -32,5 +32,73 @@ export default function AdminLoginPage() {
     router.refresh();
   }
 
-  return <main className="admin-login-page"><section className="admin-login-card"><div className="login-logo"><Image src="/img/anayazi.png" width={230} height={48} priority alt="BişeyEksik"/></div><span className="login-security"><i className="fa-solid fa-shield-halved"/> Güvenli Yönetim Girişi</span><h1>Yönetim paneline giriş yap</h1><p>Size tanımlanan kullanıcı kodu ve şifrenizle devam edin.</p><form onSubmit={handleSubmit}><label className="field">Kullanıcı Kodu<div className="login-input"><i className="fa-solid fa-user-shield"/><input name="userCode" required autoComplete="username" placeholder="SUPER-001" /></div></label><label className="field">Şifre<div className="login-input"><i className="fa-solid fa-lock"/><input name="password" required minLength={8} type="password" autoComplete="current-password" placeholder="Şifrenizi girin" /></div></label>{error&&<div className="login-error"><i className="fa-solid fa-circle-exclamation"/>{error}</div>}<button className="btn primary login-submit" disabled={loading}>{loading?<><i className="fa-solid fa-spinner fa-spin"/> Kontrol ediliyor</>:<>Güvenli Giriş <i className="fa-solid fa-arrow-right"/></>}</button></form><small><i className="fa-solid fa-lock"/> Oturumunuz güvenli çerezler ve Supabase Auth ile korunur.</small></section></main>;
+  return (
+    <main className="admin-login-page">
+      <section className="admin-login-card">
+        <div className="login-logo">
+          <Image
+            src="/img/anayazi.png"
+            width={230}
+            height={48}
+            priority
+            alt="BişeyEksik"
+          />
+        </div>
+        <span className="login-security">
+          <i className="fa-solid fa-shield-halved" /> Güvenli Yönetim Girişi
+        </span>
+        <h1>Yönetim paneline giriş yap</h1>
+        <p>Size tanımlanan kullanıcı kodu ve şifrenizle devam edin.</p>
+        <form onSubmit={handleSubmit}>
+          <label className="field">
+            Kullanıcı Kodu
+            <div className="login-input">
+              <i className="fa-solid fa-user-shield" />
+              <input
+                name="userCode"
+                required
+                autoComplete="username"
+                placeholder="SUPER-001"
+              />
+            </div>
+          </label>
+          <label className="field">
+            Şifre
+            <div className="login-input">
+              <i className="fa-solid fa-lock" />
+              <input
+                name="password"
+                required
+                minLength={8}
+                type="password"
+                autoComplete="current-password"
+                placeholder="Şifrenizi girin"
+              />
+            </div>
+          </label>
+          {error && (
+            <div className="login-error">
+              <i className="fa-solid fa-circle-exclamation" />
+              {error}
+            </div>
+          )}
+          <button className="btn primary login-submit" disabled={loading}>
+            {loading ? (
+              <>
+                <i className="fa-solid fa-spinner fa-spin" /> Kontrol ediliyor
+              </>
+            ) : (
+              <>
+                Güvenli Giriş <i className="fa-solid fa-arrow-right" />
+              </>
+            )}
+          </button>
+        </form>
+        <small>
+          <i className="fa-solid fa-lock" /> Oturumunuz güvenli çerezler ve
+          kimlik doğrulama sistemiyle korunur.
+        </small>
+      </section>
+    </main>
+  );
 }

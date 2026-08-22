@@ -7,6 +7,9 @@ import {
 } from "@/data/section-content";
 import { useAdmin, type DrawerRequest, type DrawerType } from "./admin-shell";
 import { AdminAuditPanel } from "./admin-audit-panel";
+import { AdminCategoryManagement } from "./admin-category-management";
+import { AdminSellerManagement } from "./admin-seller-management";
+import { AdminProductApprovals } from "./admin-product-approvals";
 import { AdminUserManagement } from "./admin-user-management";
 const statusClass = (v: string) =>
   /Aktif|Onay|Tamam|Hazır|Başarılı|Yayında|Teslim/.test(v)
@@ -237,6 +240,9 @@ export function SectionContent({ section }: { section: AdminSection }) {
   const data = sectionContent[section.id],
     { openDrawer, notify, logAction } = useAdmin();
   if (section.id === "admin-users") return <AdminUserManagement />;
+  if (section.id === "sellers") return <AdminSellerManagement />;
+  if (section.id === "categories") return <AdminCategoryManagement />;
+  if (section.id === "approvals") return <AdminProductApprovals />;
   if (section.id === "audit-logs" || section.id === "top-logs")
     return <AdminAuditPanel />;
   if (!data) return <Fallback section={section} />;

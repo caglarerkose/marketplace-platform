@@ -3,7 +3,7 @@ function requirePublicEnvironmentVariable(
 ) {
   const value = process.env[name];
   if (!value) {
-    throw new Error(`Supabase bağlantısı eksik: ${name}`);
+    throw new Error(`Veritabanı bağlantısı eksik: ${name}`);
   }
   return value;
 }

@@ -3,6 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "scripts": { "dev": "next dev --port 3001", "build": "next build", "lint": "next lint", "typecheck": "tsc --noEmit", "test": "vitest run" },
-  "dependencies": { "@marketplace/api-client": "workspace:*", "@marketplace/types": "workspace:*", "@marketplace/ui": "workspace:*", "next": "^15.5.2", "react": "^19.1.1", "react-dom": "^19.1.1", "zod": "^4.1.5" },
+  "dependencies": { "@marketplace/api-client": "workspace:*", "@marketplace/types": "workspace:*", "@marketplace/ui": "workspace:*", "@supabase/supabase-js": "^2.112.3", "next": "^15.5.2", "react": "^19.1.1", "react-dom": "^19.1.1", "zod": "^4.1.5" },
   "devDependencies": { "@types/node": "^22.18.0", "@types/react": "^19.1.12", "typescript": "^5.9.2", "vitest": "^3.2.4" }
 }

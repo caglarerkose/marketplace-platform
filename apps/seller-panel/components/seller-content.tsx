@@ -8,12 +8,11 @@ import {
 import { allSections, type SellerSection } from "@/data/seller";
 import { sellerContent, type SellerContentData } from "@/data/functional";
 import { SellerBrandLogo } from "./seller-brand-logo";
-const products = [
-    ["JBL Tune 520BT", "Excel", "5", "₺1.599", "Aktif teklif"],
-    ["Apple iPhone 15", "Tekil", "3", "₺42.999", "Onay bekliyor"],
-    ["Ahşap Salıncak", "XML", "12", "₺2.499", "Kategori revize"],
-  ],
-  baseOrders = [
+import { SellerProducts } from "./seller-products";
+import { SellerInventory } from "./seller-inventory";
+import { SellerDashboardCatalog } from "./seller-dashboard-catalog";
+import { SellerStoreProfile } from "./seller-store-profile";
+const baseOrders = [
     ["#16832", "Ahmet Yılmaz", "₺899", "Ödeme Alındı"],
     ["#16831", "Zeynep Kaya", "₺1.299", "Kargolanacak"],
     ["#16830", "Mehmet Demir", "₺559", "Kargoda"],
@@ -112,8 +111,7 @@ function Dashboard() {
         <QuestionList />
       </div>
       <div className="grid-3">
-        <StockList />
-        <ProductsMini />
+        <SellerDashboardCatalog />
         <Notices />
       </div>
       <div className="growth-strip">
@@ -238,62 +236,6 @@ function QuestionList() {
             >
               Yanıtla
             </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-function StockList() {
-  const { openDrawer, setActive } = useSeller();
-  return (
-    <div className="card">
-      <div className="card-head">
-        <h3>Stok Uyarıları</h3>
-        <button className="link" onClick={() => setActive("stock")}>
-          Tümünü Gör
-        </button>
-      </div>
-      <div className="card-body list">
-        {[
-          ["JBL Tune 520BT", "5"],
-          ["iPhone 15", "3"],
-          ["Airfryer", "4"],
-        ].map((x) => (
-          <div className="row" key={x[0]}>
-            <div className="product-thumb">
-              <i className="fa-solid fa-box" />
-            </div>
-            <div className="row-title">{x[0]}</div>
-            <button
-              className="pill red"
-              onClick={() => openDrawer({ type: "stock", record: x[0] })}
-            >
-              {x[1]} kaldı
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-function ProductsMini() {
-  return (
-    <div className="card">
-      <div className="card-head">
-        <h3>En Çok Satan Ürünler</h3>
-      </div>
-      <div className="card-body list">
-        {products.map((x, i) => (
-          <div className="row" key={x[0]}>
-            <div className="product-thumb">
-              <i className="fa-solid fa-headphones" />
-            </div>
-            <div>
-              <div className="row-title">{x[0]}</div>
-              <div className="row-sub">{892 - i * 218} adet satıldı</div>
-            </div>
-            <b>{x[3]}</b>
           </div>
         ))}
       </div>
@@ -597,6 +539,12 @@ export function SellerContent() {
     <div className="content">
       {s.id === "dashboard" ? (
         <Dashboard />
+      ) : s.id === "products" ? (
+        <SellerProducts />
+      ) : s.id === "stock" ? (
+        <SellerInventory />
+      ) : s.id === "seller-top-profile" ? (
+        <SellerStoreProfile />
       ) : data ? (
         <Functional s={s} data={data} />
       ) : (

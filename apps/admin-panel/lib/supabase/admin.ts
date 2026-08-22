@@ -5,7 +5,7 @@ import { supabaseUrl } from "./config";
 function getSecretKey() {
   const value = process.env.SUPABASE_SECRET_KEY;
   if (!value) {
-    throw new Error("Sunucu Supabase bağlantısı eksik: SUPABASE_SECRET_KEY");
+    throw new Error("Sunucu veritabanı bağlantısı eksik: SUPABASE_SECRET_KEY");
   }
   return value;
 }

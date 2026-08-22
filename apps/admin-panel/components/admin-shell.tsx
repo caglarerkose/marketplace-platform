@@ -44,7 +44,7 @@ type Ctx = {
   logAction: (m: string, s: string, r?: string) => void;
 };
 const Context = createContext<Ctx | null>(null);
-const backendReadySections = new Set(["admin-users", "audit-logs"]);
+const backendReadySections = new Set(["admin-users", "audit-logs", "categories", "sellers"]);
 const superAdminSections = new Set(["admin-users", "audit-logs"]);
 export const useAdmin = () => {
   const v = useContext(Context);
@@ -429,6 +429,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     [toast, setToast] = useState(""),
     [drawer, setDrawer] = useState<DrawerRequest | null>(null),
     [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null),
+    [navigationCounts, setNavigationCounts] = useState<Record<string, number>>({}),
     [accessDenied, setAccessDenied] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -449,6 +450,24 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     void loadAccess();
     return () => {
       cancelled = true;
+    };
+  }, []);
+  useEffect(() => {
+    let cancelled = false;
+    const loadCounts = async () => {
+      const response = await fetch("/api/admin/navigation-counts", { cache: "no-store" });
+      if (!response.ok || cancelled) return;
+      const result = (await response.json()) as { counts: Record<string, number> };
+      setNavigationCounts(result.counts || {});
+    };
+    const refresh = () => void loadCounts();
+    void loadCounts();
+    window.addEventListener("biseyeksik:navigation-counts", refresh);
+    const interval = window.setInterval(loadCounts, 60000);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("biseyeksik:navigation-counts", refresh);
+      window.clearInterval(interval);
     };
   }, []);
   const setActive = (id: string) => {
@@ -531,14 +550,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               onClick={() => openDrawer({ type: "notifications" })}
             >
               <i className="fa-regular fa-bell" />
-              <span className="dot">12</span>
             </button>
             <button
               className="icon-btn"
               onClick={() => openDrawer({ type: "messages" })}
             >
               <i className="fa-regular fa-envelope" />
-              <span className="dot">5</span>
             </button>
             <button
               className="icon-btn"
@@ -556,13 +573,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <i className="fa-solid fa-arrow-right-from-bracket" />
               </button>
             </form>
-            <div className="admin-user">
-              <div className="avatar">Ç</div>
-              <div>
-                <strong>Çağlar Erkose</strong>
-                <span>Super Admin</span>
-              </div>
-            </div>
           </div>
         </header>
         <aside className={`sidebar ${menu ? "open" : ""}`}>
@@ -575,7 +585,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               >
                 <i className={`fa-solid ${x.icon}`} />
                 {x.title}
-                {x.badge && <span className="nav-badge">{x.badge}</span>}
+                {Boolean(navigationCounts[x.id]) && <span className="nav-badge">{navigationCounts[x.id]}</span>}
                 {backendReadySections.has(x.id) && (
                   <span
                     className="backend-ready-check"
