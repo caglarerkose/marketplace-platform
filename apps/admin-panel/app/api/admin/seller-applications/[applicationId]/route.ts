@@ -19,6 +19,9 @@ const reviewSchema = z.discriminatedUnion("action", [
   }),
 ]);
 
+const sellerPanelUrl = (process.env.SELLER_PANEL_URL || "https://marketplace-platform-seller-panel.vercel.app")
+  .replace(/\/$/, "");
+
 function slugify(value: string) {
   return value.toLocaleLowerCase("tr-TR")
     .replaceAll("ı", "i").replaceAll("ğ", "g").replaceAll("ü", "u")
@@ -48,7 +51,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ appli
   const { applicationId } = await context.params;
   const adminClient = createSupabaseAdminClient();
   const { data: application } = await adminClient.from("seller_applications")
-    .select("id,store_name,status,authorized_name,iban,document_status,review_checklist").eq("id", applicationId).maybeSingle();
+    .select("id,applicant_user_id,store_name,status,contact_email,authorized_name,iban,document_status,review_checklist").eq("id", applicationId).maybeSingle();
   if (!application) return NextResponse.json({ error: "Satıcı başvurusu bulunamadı." }, { status: 404 });
 
   if (parsed.data.action === "update_review") {
@@ -81,6 +84,37 @@ export async function PATCH(request: Request, context: { params: Promise<{ appli
     if (!application.authorized_name || !application.iban || application.document_status !== "complete" || !checks || requiredChecks.some((key) => checks[key] !== true)) {
       return NextResponse.json({ error: "Yetkili, IBAN, evrak durumu ve tüm kontrol maddeleri tamamlanmadan başvuru onaylanamaz." }, { status: 409 });
     }
+    let applicantUserId = application.applicant_user_id;
+    let invitedNow = false;
+    if (!applicantUserId) {
+      const { data: invitation, error: invitationError } = await adminClient.auth.admin.inviteUserByEmail(
+        application.contact_email,
+        {
+          redirectTo: `${sellerPanelUrl}/auth/callback?next=/set-password`,
+          data: {
+            account_type: "seller",
+            display_name: application.authorized_name,
+          },
+        },
+      );
+      if (invitationError || !invitation.user) {
+        const registered = invitationError?.message.toLocaleLowerCase("en-US").includes("already") || invitationError?.status === 422;
+        return NextResponse.json(
+          { error: registered ? "Bu e-posta adresiyle bir hesap zaten mevcut." : "Satıcı daveti gönderilemedi." },
+          { status: registered ? 409 : 503 },
+        );
+      }
+      applicantUserId = invitation.user.id;
+      invitedNow = true;
+      const { error: linkError } = await adminClient.from("seller_applications")
+        .update({ applicant_user_id: applicantUserId })
+        .eq("id", applicationId)
+        .is("applicant_user_id", null);
+      if (linkError) {
+        await adminClient.auth.admin.deleteUser(applicantUserId);
+        return NextResponse.json({ error: "Davet kullanıcısı başvuruya bağlanamadı." }, { status: 500 });
+      }
+    }
     const storeSlug = await availableStoreSlug(adminClient, application.store_name);
     const { data, error } = await adminClient.rpc("approve_seller_application", {
       p_application_id: applicationId,
@@ -89,6 +123,10 @@ export async function PATCH(request: Request, context: { params: Promise<{ appli
       p_admin_note: parsed.data.note || null,
     });
     if (error) {
+      if (invitedNow && applicantUserId) {
+        await adminClient.from("seller_applications").update({ applicant_user_id: null }).eq("id", applicationId);
+        await adminClient.auth.admin.deleteUser(applicantUserId);
+      }
       const message = error.message.includes("seller_already_exists")
         ? "Bu başvuru sahibine ait satıcı hesabı zaten mevcut."
         : error.code === "23505" && error.message.includes("tax_number")
@@ -102,7 +140,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ appli
       actor_user_id: actor.userId, actor_user_code: actor.userCode,
       action: `${application.store_name} satıcı başvurusu onaylandı`, module: "Satıcı Yönetimi",
       entity_type: "seller_application", entity_id: applicationId, risk: "warning",
-      details: { action: parsed.data.action, store_slug: storeSlug, result: data },
+      details: { action: parsed.data.action, store_slug: storeSlug, result: data, invitation_sent: invitedNow },
     });
     return NextResponse.json({ ok: true });
   }

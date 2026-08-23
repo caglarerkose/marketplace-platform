@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createAuthServerClient } from "@/lib/supabase/server";
 
-const schema=z.object({email:z.string().trim().toLowerCase().email(),password:z.string().min(8).max(128)});
+const schema=z.object({email:z.string().trim().toLowerCase().email(),password:z.string().min(8)});
 export async function POST(request:Request){
  const parsed=schema.safeParse(await request.json().catch(()=>null));
  if(!parsed.success)return NextResponse.json({error:"E-posta veya şifre hatalı."},{status:400});

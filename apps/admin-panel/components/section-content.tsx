@@ -11,6 +11,15 @@ import { AdminCategoryManagement } from "./admin-category-management";
 import { AdminSellerManagement } from "./admin-seller-management";
 import { AdminProductApprovals } from "./admin-product-approvals";
 import { AdminUserManagement } from "./admin-user-management";
+import { AdminOrders } from "./admin-orders";
+import { AdminOrderRequests } from "./admin-order-requests";
+import { AdminSupport } from "./admin-support";
+import { AdminProductFeedback } from "./admin-product-feedback";
+import { AdminCampaigns } from "./admin-campaigns";
+import { AdminFinance } from "./admin-finance";
+import { AdminAnnouncements } from "./admin-announcements";
+import { AdminCustomers } from "./admin-customers";
+import { AdminStorefrontContent } from "./admin-storefront-content";
 const statusClass = (v: string) =>
   /Aktif|Onay|Tamam|Hazır|Başarılı|Yayında|Teslim/.test(v)
     ? "green"
@@ -242,7 +251,16 @@ export function SectionContent({ section }: { section: AdminSection }) {
   if (section.id === "admin-users") return <AdminUserManagement />;
   if (section.id === "sellers") return <AdminSellerManagement />;
   if (section.id === "categories") return <AdminCategoryManagement />;
-  if (section.id === "approvals") return <AdminProductApprovals />;
+  if (section.id === "approvals") return <><AdminProductApprovals /><AdminProductFeedback /></>;
+  if (section.id === "orders") return <><AdminOrders /><AdminOrderRequests /></>;
+  if (section.id === "support") return <AdminSupport />;
+  if (section.id === "campaigns") return <AdminCampaigns />;
+  if (section.id === "commissions") return <AdminFinance />;
+  if (section.id === "top-announcements") return <AdminAnnouncements />;
+  if (section.id === "customers") return <AdminCustomers />;
+  if (section.id === "top-home-layout") return <AdminStorefrontContent mode="block" />;
+  if (section.id === "top-menu-layout") return <AdminStorefrontContent mode="navigation" />;
+  if (section.id === "top-footer-pages") return <AdminStorefrontContent mode="page" />;
   if (section.id === "audit-logs" || section.id === "top-logs")
     return <AdminAuditPanel />;
   if (!data) return <Fallback section={section} />;
@@ -270,7 +288,7 @@ export function SectionContent({ section }: { section: AdminSection }) {
           <p>{section.description}</p>
         </div>
         <div className="head-actions">
-          {data.secondary && (
+          {data.secondary && !/^Demo\b/i.test(data.secondary) && (
             <button className="btn" onClick={() => act(data.secondary!)}>
               {data.secondary}
             </button>
@@ -280,7 +298,7 @@ export function SectionContent({ section }: { section: AdminSection }) {
           </button>
         </div>
       </div>
-      {data.stats && (
+      {data.stats && !section.id.startsWith("top-") && (
         <div className="status-board">
           {data.stats.map(([label, value, icon, tone]) => (
             <div className={`status-card ${tone}`} key={label}>
@@ -348,11 +366,11 @@ export function SectionContent({ section }: { section: AdminSection }) {
                 </tr>
               </thead>
               <tbody>
-                {table.rows.map((row, i) => (
+                {(section.id.startsWith("top-") ? [] : table.rows).map((row, i) => (
                   <tr key={i}>
                     {row.map((value, j) => (
                       <td key={`${i}-${j}`}>
-                        {j === row.length - 1 ? (
+                        {j === row.length - 1 && table.headers[j] === "İşlem" ? (
                           <button
                             className={`pill ${statusClass(value)}`}
                             onClick={() => act(value, row[0])}
@@ -366,6 +384,9 @@ export function SectionContent({ section }: { section: AdminSection }) {
                     ))}
                   </tr>
                 ))}
+                {section.id.startsWith("top-") && (
+                  <tr><td colSpan={table.headers.length}>Henüz kayıt bulunmuyor.</td></tr>
+                )}
               </tbody>
             </table>
           </div>

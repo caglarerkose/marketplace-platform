@@ -1,3 +1,9 @@
+@import "./commerce.css";
+@import "./requests.css";
+@import "./support.css";
+@import "./notifications.css";
+@import "./product-feedback.css";
+
 :root {
   --orange: #ff4f30;
   --amber: #ffb000;

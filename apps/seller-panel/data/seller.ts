@@ -19,9 +19,5 @@ export const topSections:SellerSection[]=[
  {id:"seller-top-announcements",title:"Duyurularım",description:"Admin tarafından gönderilen sistem ve kampanya duyurularını takip edin.",icon:"fa-bullhorn",kind:"list"},
  {id:"seller-top-import-sources",title:"Aktarım Kaynakları",description:"Excel, XML ve pazaryeri bağlantı ayarlarını yönetin.",icon:"fa-plug",kind:"modules"},
  {id:"seller-top-installments",title:"Taksit Bilgilerim",description:"Ürünlerinizde geçerli banka ve kart taksitlerini görüntüleyin.",icon:"fa-credit-card",kind:"list"},
- {id:"seller-top-shipping",title:"Kargo Ayarları",description:"Kargo firmaları, teslimat süresi ve ücretsiz kargo kurallarını yönetin.",icon:"fa-truck",kind:"settings"},
- {id:"seller-top-templates",title:"Ürün Şablonları",description:"Açıklama, garanti, iade ve teknik bilgi şablonlarını yönetin.",icon:"fa-clipboard-list",kind:"modules"},
- {id:"seller-top-integrations",title:"Entegrasyonlar",description:"Muhasebe, kargo ve ürün aktarım bağlantılarını yönetin.",icon:"fa-link",kind:"modules"},
- {id:"seller-top-notifications",title:"Bildirim Ayarları",description:"Sipariş, stok, kampanya ve finans bildirimlerini düzenleyin.",icon:"fa-bell",kind:"settings"}
 ];
 export const allSections=[...sideSections,...topSections];

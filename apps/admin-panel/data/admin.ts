@@ -28,6 +28,5 @@ export const topSections:AdminSection[]=[
  {id:"top-mobile-settings",title:"Mobil Ayarlar",description:"Mobil navigasyon, uygulama bannerı ve görünüm tercihlerini yönetin.",icon:"fa-mobile-screen-button",kind:"settings",top:true,metric:"2",metricLabel:"Mobil platform"},
  {id:"top-filter-standard",title:"Filtre Standardı",description:"Kategori filtrelerinin görünüm ve sıralama kurallarını belirleyin.",icon:"fa-filter-circle-xmark",kind:"settings",top:true,metric:"186",metricLabel:"Filtre seti"},
  {id:"top-seo-pages",title:"SEO / Sayfalar",description:"Meta alanlarını, indeksleme ve yönlendirme kurallarını yönetin.",icon:"fa-magnifying-glass-chart",kind:"table",top:true,metric:"94",metricLabel:"SEO puanı"},
- {id:"top-banner-layout",title:"Banner / Slider Yönetimi",description:"Web ve mobil banner görsellerini, sıralamayı ve hedefleri yönetin.",icon:"fa-images",kind:"modules",top:true,metric:"10",metricLabel:"Aktif banner"}
 ];
 export const allSections=[...sideSections,...topSections];

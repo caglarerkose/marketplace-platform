@@ -5,6 +5,7 @@ import { notFound, useParams, useRouter } from "next/navigation";
 import { MouseEvent, TouchEvent, useEffect, useState } from "react";
 import { ProductRow } from "@/components/product-row";
 import { ProductTitle } from "@/components/product-title";
+import { ProductFeedback } from "@/components/product-feedback";
 import { useStore } from "@/components/store-provider";
 import { formatTL, productGallery, type Product } from "@/data/catalog";
 
@@ -67,6 +68,7 @@ export default function ProductDetailPage() {
       <aside className="trendy-seller-column"><article className="seller-card"><header><div><b>{product.sellerName || "Mağaza"}</b><small>Onaylı mağaza</small></div><i className="fa-solid fa-circle-check" /></header></article></aside>
     </div>
     <section className="trendy-description"><nav><button className="active">Ürün Bilgileri</button></nav><div><h2><ProductTitle name={product.name} /></h2><p>{product.description || "Bu ürün için açıklama girilmemiştir."}</p></div></section>
+    <ProductFeedback productId={product.productId} offerId={product.offerId} />
     {related.length > 0 && <ProductRow title="Benzer Ürünler" products={related} tone="blue" />}
   </div>;
 }

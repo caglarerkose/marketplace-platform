@@ -12,11 +12,13 @@ import { SellerProducts } from "./seller-products";
 import { SellerInventory } from "./seller-inventory";
 import { SellerDashboardCatalog } from "./seller-dashboard-catalog";
 import { SellerStoreProfile } from "./seller-store-profile";
-const baseOrders = [
-    ["#16832", "Ahmet Yılmaz", "₺899", "Ödeme Alındı"],
-    ["#16831", "Zeynep Kaya", "₺1.299", "Kargolanacak"],
-    ["#16830", "Mehmet Demir", "₺559", "Kargoda"],
-  ];
+import { SellerOrders } from "./seller-orders";
+import { SellerOrderRequests } from "./seller-order-requests";
+import { SellerSupport } from "./seller-support";
+import { SellerQuestions } from "./seller-questions";
+import { SellerCampaigns } from "./seller-campaigns";
+import { SellerFinance } from "./seller-finance";
+import { SellerAnnouncements } from "./seller-announcements";
 const actionDrawer = (
   section: string,
   action: string,
@@ -178,40 +180,7 @@ function Chart() {
   );
 }
 function OrderPreview() {
-  const { setActive, openDrawer } = useSeller();
-  return (
-    <div className="card">
-      <div className="card-head">
-        <h3>Son Siparişler</h3>
-        <button className="link" onClick={() => setActive("orders")}>
-          Tümünü Gör
-        </button>
-      </div>
-      <div className="card-body table-scroll">
-        <table className="table">
-          <tbody>
-            {baseOrders.map((x) => (
-              <tr key={x[0]}>
-                <td>
-                  <button
-                    className="link"
-                    onClick={() => openDrawer({ type: "order", record: x[0] })}
-                  >
-                    {x[0]}
-                  </button>
-                </td>
-                <td>{x[1]}</td>
-                <td>{x[2]}</td>
-                <td>
-                  <span className="pill yellow">{x[3]}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  return <SellerOrders compact />;
 }
 function QuestionList() {
   const { openDrawer, setActive } = useSeller();
@@ -274,84 +243,7 @@ function Notices() {
   );
 }
 function OrderBoard() {
-  const { openDrawer, notify, logAction } = useSeller();
-  const [orders, setOrders] = useState(
-    baseOrders.map((x) => ({
-      id: x[0],
-      customer: x[1],
-      total: x[2],
-      status: x[3],
-    })),
-  );
-  const update = (i: number, status: string) => {
-    const o = orders[i];
-    setOrders((a) => a.map((x, n) => (n === i ? { ...x, status } : x)));
-    logAction("Sipariş", `${o.id}: ${status}`);
-    notify(`${o.id} ${status}`);
-  };
-  return (
-    <>
-      <div className="card content-table">
-        <div className="card-head">
-          <h3>Sipariş / Kargo Operasyonları</h3>
-        </div>
-        <div className="card-body table-scroll">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Sipariş</th>
-                <th>Müşteri</th>
-                <th>Tutar</th>
-                <th>Durum</th>
-                <th>İşlemler</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((o, i) => (
-                <tr key={o.id}>
-                  <td>{o.id}</td>
-                  <td>{o.customer}</td>
-                  <td>{o.total}</td>
-                  <td>
-                    <span className="pill yellow">{o.status}</span>
-                  </td>
-                  <td className="seller-actions">
-                    <button
-                      onClick={() =>
-                        openDrawer({ type: "order", record: o.id })
-                      }
-                    >
-                      Detay
-                    </button>
-                    <button
-                      onClick={() =>
-                        openDrawer({ type: "tracking", record: o.id })
-                      }
-                    >
-                      Takip No Gir
-                    </button>
-                    <button onClick={() => update(i, "Kargoya Verildi")}>
-                      Kargoya Ver
-                    </button>
-                    <button onClick={() => update(i, "Teslim Edildi")}>
-                      Teslim Edildi
-                    </button>
-                    <button
-                      onClick={() =>
-                        openDrawer({ type: "support", record: o.id })
-                      }
-                    >
-                      Destek
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
-  );
+  return <><SellerOrders /><SellerOrderRequests /></>;
 }
 function Functional({
   s,
@@ -362,6 +254,24 @@ function Functional({
 }) {
   const { openDrawer, notify, logAction, openCampaign, setActive } =
     useSeller();
+  const contentTitle =
+    s.id === "seller-top-product-ranking"
+      ? "Mağaza İçi Ürün Sıralaması"
+      : s.id === "seller-top-import-sources"
+        ? "Ürün Aktarım Kaynakları"
+        : s.title;
+  const contentDescription =
+    s.id === "seller-top-showcase"
+      ? "Satıcı mağaza sayfasında görünecek banner, tanıtım ve vitrin bloklarını yönetin."
+      : s.id === "seller-top-product-ranking"
+        ? "Kendi mağaza vitrininizdeki ürünlerin öncelik, sıra ve öne çıkarma durumunu yönetin."
+        : s.id === "seller-top-documents"
+          ? "Mağaza türünüze göre istenen belgeleri, admin notlarını ve ürün yükleme yetkinizi takip edin."
+          : s.id === "seller-top-import-sources"
+            ? "Excel, XML veya pazaryeri bağlantı ayarlarını burada kurun; aktarım işlemini Ürünlerim ekranından çalıştırın."
+            : s.id === "seller-top-installments"
+              ? "Admin tarafından kategori bazlı belirlenen taksit kurallarının mağazanıza ve ürünlerinize etkisini görüntüleyin."
+              : s.description;
   const act = (a: string, r?: string) => {
     if (/Yenile/.test(a)) {
       notify(`${s.title} yenilendi`);
@@ -386,8 +296,8 @@ function Functional({
     <>
       <div className="page-head">
         <div className="page-title">
-          <h1>{s.title}</h1>
-          <p>{s.description}</p>
+          <h1>{contentTitle}</h1>
+          <p>{contentDescription}</p>
         </div>
         <div className="head-actions">
           {data.secondary && (
@@ -409,7 +319,7 @@ function Functional({
           </div>
         </div>
       )}
-      {data.stats && (
+      {data.stats && s.id !== "orders" && (
         <div className="catalog-board">
           {data.stats.map((x) => (
             <article className={x[3]} key={x[0]}>
@@ -456,7 +366,7 @@ function Functional({
                   <tr key={i}>
                     {row.map((v, j) => (
                       <td key={j}>
-                        {j === row.length - 1 ? (
+                        {j === row.length - 1 && t.headers[j] === "İşlem" ? (
                           <button
                             className="pill"
                             onClick={() => act(v, row[0])}
@@ -545,6 +455,14 @@ export function SellerContent() {
         <SellerInventory />
       ) : s.id === "seller-top-profile" ? (
         <SellerStoreProfile />
+      ) : s.id === "messages" ? (
+        <><SellerSupport /><SellerQuestions /></>
+      ) : s.id === "campaigns" ? (
+        <SellerCampaigns />
+      ) : s.id === "finance" ? (
+        <SellerFinance />
+      ) : s.id === "seller-top-announcements" ? (
+        <SellerAnnouncements />
       ) : data ? (
         <Functional s={s} data={data} />
       ) : (

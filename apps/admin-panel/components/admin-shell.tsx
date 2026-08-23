@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { createContext, useContext, useEffect, useState } from "react";
 import { allSections, sideSections, topSections } from "@/data/admin";
+import { AdminNotifications } from "./admin-notifications";
 
 export type DrawerType =
   | "sellerApprove"
@@ -44,7 +45,12 @@ type Ctx = {
   logAction: (m: string, s: string, r?: string) => void;
 };
 const Context = createContext<Ctx | null>(null);
-const backendReadySections = new Set(["admin-users", "audit-logs", "categories", "sellers"]);
+const backendReadySections = new Set([
+  "admin-users",
+  "audit-logs",
+  "categories",
+  "sellers",
+]);
 const superAdminSections = new Set(["admin-users", "audit-logs"]);
 export const useAdmin = () => {
   const v = useContext(Context);
@@ -259,22 +265,7 @@ function Drawer({
     notify(m);
     close();
   };
-  if (request.type === "notifications")
-    return (
-      <div className="info-strip">
-        <i className="fa-solid fa-bell" />
-        <div>
-          <strong>12 Yeni Bildirim</strong>
-          <p>
-            32 yeni satıcı başvurusu
-            <br />
-            54 ürün onay bekliyor
-            <br />
-            14 eksik evrak talebi
-          </p>
-        </div>
-      </div>
-    );
+  if (request.type === "notifications") return <AdminNotifications />;
   if (request.type === "messages")
     return (
       <div className="list">
@@ -429,7 +420,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     [toast, setToast] = useState(""),
     [drawer, setDrawer] = useState<DrawerRequest | null>(null),
     [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null),
-    [navigationCounts, setNavigationCounts] = useState<Record<string, number>>({}),
+    [navigationCounts, setNavigationCounts] = useState<Record<string, number>>(
+      {},
+    ),
+    [notificationCount, setNotificationCount] = useState(0),
     [accessDenied, setAccessDenied] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -453,11 +447,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
   useEffect(() => {
+    void fetch("/api/admin/notifications").then(async (response) => {
+      if (response.ok) setNotificationCount((await response.json()).unread || 0);
+    }).catch(() => {});
+  }, [drawer]);
+  useEffect(() => {
     let cancelled = false;
     const loadCounts = async () => {
-      const response = await fetch("/api/admin/navigation-counts", { cache: "no-store" });
+      const response = await fetch("/api/admin/navigation-counts", {
+        cache: "no-store",
+      });
       if (!response.ok || cancelled) return;
-      const result = (await response.json()) as { counts: Record<string, number> };
+      const result = (await response.json()) as {
+        counts: Record<string, number>;
+      };
       setNavigationCounts(result.counts || {});
     };
     const refresh = () => void loadCounts();
@@ -550,6 +553,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               onClick={() => openDrawer({ type: "notifications" })}
             >
               <i className="fa-regular fa-bell" />
+              {notificationCount > 0 && <span className="dot">{notificationCount}</span>}
             </button>
             <button
               className="icon-btn"
@@ -585,7 +589,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               >
                 <i className={`fa-solid ${x.icon}`} />
                 {x.title}
-                {Boolean(navigationCounts[x.id]) && <span className="nav-badge">{navigationCounts[x.id]}</span>}
+                {Boolean(navigationCounts[x.id]) && (
+                  <span className="nav-badge">{navigationCounts[x.id]}</span>
+                )}
                 {backendReadySections.has(x.id) && (
                   <span
                     className="backend-ready-check"
@@ -638,7 +644,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               onMouseDown={(event) => event.stopPropagation()}
             >
               <div className="confirm-brand">
-                <Image src="/img/anayazi.png" width={174} height={35} alt="BişeyEksik" />
+                <Image
+                  src="/img/anayazi.png"
+                  width={174}
+                  height={35}
+                  alt="BişeyEksik"
+                />
               </div>
               <div className="confirm-icon">
                 <i className="fa-solid fa-lock" />
@@ -646,7 +657,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <h2 id="access-denied-title">Yetkisiz erişim</h2>
               <p>Bu işlemi yapmaya yetkili değilsiniz.</p>
               <div className="confirm-actions confirm-actions-single">
-                <button className="btn primary" onClick={() => setAccessDenied(false)}>
+                <button
+                  className="btn primary"
+                  onClick={() => setAccessDenied(false)}
+                >
                   <i className="fa-solid fa-check" /> Tamam
                 </button>
               </div>

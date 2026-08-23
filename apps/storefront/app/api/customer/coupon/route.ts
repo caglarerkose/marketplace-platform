@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+const schema=z.object({code:z.string().trim().min(3).max(32),cartTotal:z.number().positive()});
+export async function POST(request:Request){const client=await createSupabaseServerClient();const{data:{user}}=await client.auth.getUser();if(!user)return NextResponse.json({error:"Kupon kullanmak için giriş yapın."},{status:401});const parsed=schema.safeParse(await request.json().catch(()=>({})));if(!parsed.success)return NextResponse.json({error:"Kupon bilgilerini kontrol edin."},{status:400});const{data,error}=await client.rpc("preview_coupon",{p_code:parsed.data.code,p_cart_total:parsed.data.cartTotal});if(error)return NextResponse.json({error:error.message.includes("minimum")?"Sepet tutarı kupon koşulunu karşılamıyor.":"Kupon geçersiz veya kullanım süresi dolmuş."},{status:400});return NextResponse.json({coupon:{code:parsed.data.code.toUpperCase(),...(data?.[0]||{})}})}

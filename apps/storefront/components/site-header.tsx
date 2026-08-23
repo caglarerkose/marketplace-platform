@@ -18,11 +18,13 @@ export function SiteHeader() {
     [mobileMenu, setMobileMenu] = useState(false),
     [prompt, setPrompt] = useState(""),
     [categories, setCategories] = useState<HeaderCategory[]>([]),
+    [notificationCount, setNotificationCount] = useState(0),
     [productScrolled, setProductScrolled] = useState(false),
     inner = path !== "/",
     productDetail = path.startsWith("/urun/"),
     activeProduct = productDetail ? {id:decodeURIComponent(path.split("/").pop()||""),name:"Ürün"} : undefined;
   useEffect(()=>{fetch("/api/catalog-categories").then(async response=>{const result=await response.json();if(response.ok)setCategories(result.categories||[])}).catch(()=>{})},[]);
+  useEffect(()=>{fetch("/api/customer/notifications").then(async response=>{if(response.ok){const result=await response.json();setNotificationCount(result.unread||0)}}).catch(()=>{})},[path]);
   useEffect(() => {
     let word = 0,
       char = 0,
@@ -166,7 +168,7 @@ export function SiteHeader() {
             {!inner && (
               <>
                 <Link href="/hesabim?tab=mesajlar" aria-label="Mesajlar"><i className="fa-solid fa-message" /></Link>
-                <Link href="/hesabim?tab=bildirimler" aria-label="Bildirimler"><i className="fa-solid fa-bell" /><b className="notification-dot">1</b></Link>
+                <Link href="/hesabim?tab=bildirimler" aria-label="Bildirimler"><i className="fa-solid fa-bell" />{notificationCount>0&&<b className="notification-dot">{notificationCount}</b>}</Link>
               </>
             )}
             {productDetail && (

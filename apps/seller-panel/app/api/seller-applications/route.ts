@@ -33,20 +33,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Bu vergi numarasıyla kayıtlı satıcı zaten mevcut." }, { status: 409 });
   }
 
-  const redirectTo = `${new URL(request.url).origin}/set-password`;
-  const { data: invitation, error: invitationError } = await adminClient.auth.admin.inviteUserByEmail(parsed.data.email, {
-    redirectTo, data: { account_type: "seller_applicant", display_name: parsed.data.authorizedName },
-  });
-  if (invitationError || !invitation.user) {
-    const registered = invitationError?.message.toLocaleLowerCase("en-US").includes("already") || invitationError?.status === 422;
-    return NextResponse.json(
-      { error: registered ? "Bu e-posta daha önce kayıtlı. Satıcı girişi yaparak devam edin." : "Başvuru daveti oluşturulamadı. Lütfen daha sonra tekrar deneyin." },
-      { status: registered ? 409 : 503 },
-    );
-  }
-
   const { error } = await adminClient.from("seller_applications").insert({
-    applicant_user_id: invitation.user.id, business_type: parsed.data.businessType, legal_name: parsed.data.legalName,
+    business_type: parsed.data.businessType, legal_name: parsed.data.legalName,
     tax_number: parsed.data.taxNumber, store_name: parsed.data.storeName, contact_email: parsed.data.email,
     contact_phone: parsed.data.phone, authorized_name: parsed.data.authorizedName, sales_category: parsed.data.salesCategory,
     iban: parsed.data.iban, preferred_shipping_company: parsed.data.preferredShippingCompany,
@@ -54,7 +42,6 @@ export async function POST(request: Request) {
     status: "submitted", submitted_at: new Date().toISOString(),
   });
   if (error) {
-    await adminClient.auth.admin.deleteUser(invitation.user.id);
     const duplicate = error.code === "23505";
     return NextResponse.json(
       { error: duplicate ? "Bu bilgilerle açık bir satıcı başvurusu zaten mevcut." : "Başvuru kaydedilemedi." },

@@ -1,0 +1,60 @@
+import { createClient, type EmailOtpType } from "@supabase/supabase-js";
+import { NextResponse, type NextRequest } from "next/server";
+import { databaseUrl, publishableKey } from "@/lib/supabase/config";
+
+const allowedNextPaths = new Set(["/set-password", "/application-status", "/panel"]);
+const allowedOtpTypes = new Set<EmailOtpType>([
+  "invite",
+  "recovery",
+  "email",
+  "email_change",
+  "signup",
+]);
+
+export async function GET(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  const nextValue = url.searchParams.get("next") || "/set-password";
+  const nextPath = allowedNextPaths.has(nextValue) ? nextValue : "/set-password";
+  const code = url.searchParams.get("code");
+  const tokenHash = url.searchParams.get("token_hash");
+  const requestedType = url.searchParams.get("type") as EmailOtpType | null;
+  const auth = createClient(databaseUrl, publishableKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const result = code
+    ? await auth.auth.exchangeCodeForSession(code)
+    : tokenHash && requestedType && allowedOtpTypes.has(requestedType)
+      ? await auth.auth.verifyOtp({ token_hash: tokenHash, type: requestedType })
+      : null;
+
+  if (!result) {
+    // Supabase's implicit invite flow can return tokens in the URL fragment.
+    // Browsers preserve that fragment when following this same-origin redirect.
+    return NextResponse.redirect(new URL(nextPath, request.url));
+  }
+
+  if (result.error || !result.data.session) {
+    const failure = new URL("/set-password", request.url);
+    failure.searchParams.set("error", "invalid_invitation");
+    return NextResponse.redirect(failure);
+  }
+
+  const response = NextResponse.redirect(new URL(nextPath, request.url));
+  const secure = process.env.NODE_ENV === "production";
+  response.cookies.set("be_seller_access", result.data.session.access_token, {
+    httpOnly: true,
+    secure,
+    sameSite: "lax",
+    path: "/",
+    maxAge: result.data.session.expires_in,
+  });
+  response.cookies.set("be_seller_refresh", result.data.session.refresh_token, {
+    httpOnly: true,
+    secure,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  return response;
+}

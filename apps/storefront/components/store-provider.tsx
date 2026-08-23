@@ -11,7 +11,6 @@ type Store = {
   quantity: (id: string, delta: number) => void; toggleSelected: (id: string) => void;
   selectAll: (selected: boolean) => void; toggleFavorite: (product: Product | string) => void;
   toast: string; clearToast: () => void; lastAdded: Product | null; closeAdded: () => void;
-  coupon: string; applyCoupon: (code: string) => boolean;
 };
 const StoreContext = createContext<Store | null>(null);
 
@@ -21,7 +20,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
   const [toast, setToast] = useState("");
   const [lastAdded, setLastAdded] = useState<Product | null>(null);
-  const [coupon, setCoupon] = useState("");
   const authenticated = useRef(false);
   const hydrated = useRef(false);
 
@@ -38,7 +36,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setCart(JSON.parse(localStorage.getItem("bx-cart") || "[]"));
       setFavorites(JSON.parse(localStorage.getItem("bx-favorites") || "[]"));
       setFavoriteProducts(JSON.parse(localStorage.getItem("bx-favorite-products") || "[]"));
-      setCoupon(localStorage.getItem("bx-coupon") || "");
     } catch { /* Bozuk tarayıcı verisi alışveriş akışını engellememeli. */ }
     void fetch("/api/customer/shopping-state").then(async (response) => {
       if (!response.ok) return;
@@ -87,7 +84,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
   const selectAll = (selected: boolean) => { setCart((current) => current.map((item) => ({ ...item, selected }))); sync({ action: "select_all", selected }); };
 
-  const value = useMemo<Store>(() => ({ cart, favorites, favoriteProducts, addCart, removeCart, quantity, toggleSelected, selectAll, toggleFavorite, toast, clearToast: () => setToast(""), lastAdded, closeAdded: () => setLastAdded(null), coupon, applyCoupon: (code: string) => { const valid = code.trim().toUpperCase() === "BISEY150"; if (valid) { setCoupon("BISEY150"); localStorage.setItem("bx-coupon", "BISEY150"); flash("150 TL kupon uygulandı"); } else flash("Kupon kodu geçersiz"); return valid; } }), [cart, favorites, favoriteProducts, toast, lastAdded, coupon]);
+  const value = useMemo<Store>(() => ({ cart, favorites, favoriteProducts, addCart, removeCart, quantity, toggleSelected, selectAll, toggleFavorite, toast, clearToast: () => setToast(""), lastAdded, closeAdded: () => setLastAdded(null) }), [cart, favorites, favoriteProducts, toast, lastAdded]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
 export const useStore = () => { const value = useContext(StoreContext); if (!value) throw new Error("Store missing"); return value; };
