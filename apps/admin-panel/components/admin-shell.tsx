@@ -380,7 +380,7 @@ function Drawer({
         <i className="fa-solid fa-circle-info" />
         <div>
           <strong>{request.record || title}</strong>
-          <p>İşlem yerel demo verisine ve denetim günlüğüne kaydedilir.</p>
+          <p>İşlem tamamlandığında güncel kayda ve denetim günlüğüne işlenir.</p>
         </div>
       </div>
       <div className="form-grid">

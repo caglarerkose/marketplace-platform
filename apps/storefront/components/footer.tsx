@@ -1,1 +1,38 @@
-import{BrandLogo}from"./brand-logo";export function Footer(){return <footer id="footer"><div><section><BrandLogo className="footer-logo"/><p>Aradığın her şey, güvenli alışveriş ve avantajlı fiyatlarla burada.</p></section><section><h4>Alışveriş Rehberi</h4><a>Sipariş ve Teslimat</a><a>İade ve Değişim</a><a>Güvenli Alışveriş</a></section><section><h4>Kurumsal</h4><a>Hakkımızda</a><a>Kariyer</a><a>Satıcı Ol</a></section><section><h4>İletişim & Destek</h4><a>Yardım Merkezi</a><a>0850 123 45 67</a><a>destek@biseyeksik.com</a></section></div><p className="footer-copy">© 2026 <BrandLogo className="footer-inline-logo"/> Tüm hakları saklıdır.</p></footer>}
+import { BrandLogo } from "./brand-logo";
+import { CookiePreferencesButton } from "./cookie-preferences-button";
+
+export function Footer() {
+  return (
+    <footer id="footer">
+      <div>
+        <section>
+          <BrandLogo className="footer-logo" />
+          <p>Aradığın her şey, güvenli alışveriş ve avantajlı fiyatlarla burada.</p>
+        </section>
+        <section>
+          <h4>Alışveriş Rehberi</h4>
+          <a>Sipariş ve Teslimat</a>
+          <a>İade ve Değişim</a>
+          <a>Güvenli Alışveriş</a>
+        </section>
+        <section>
+          <h4>Kurumsal</h4>
+          <a>Hakkımızda</a>
+          <a>Kariyer</a>
+          <a>Satıcı Ol</a>
+        </section>
+        <section>
+          <h4>İletişim & Destek</h4>
+          <a>Yardım Merkezi</a>
+          <a>0850 123 45 67</a>
+          <a>destek@biseyeksik.com</a>
+          <a href="/cerez-politikasi">Çerez Politikası</a>
+          <CookiePreferencesButton />
+        </section>
+      </div>
+      <p className="footer-copy">
+        © 2026 <BrandLogo className="footer-inline-logo" /> Tüm hakları saklıdır.
+      </p>
+    </footer>
+  );
+}

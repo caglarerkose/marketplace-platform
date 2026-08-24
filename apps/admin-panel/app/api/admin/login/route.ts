@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 const loginSchema = z.object({
   userCode: z.string().trim().toUpperCase().regex(/^(SUPER|ADM)-[0-9]{3,}$/),
@@ -13,6 +14,8 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Kullanıcı kodu veya şifre hatalı." }, { status: 400 });
   }
+  const rate = await checkRateLimit(request, "admin_login", parsed.data.userCode, 6, 900);
+  if (!rate.allowed) return NextResponse.json({ error: rate.unavailable ? "Güvenlik kontrolü geçici olarak kullanılamıyor." : "Çok fazla giriş denemesi yapıldı. Lütfen daha sonra tekrar deneyin." }, { status: rate.unavailable ? 503 : 429, headers: { "Retry-After": String(rate.retryAfter) } });
 
   const adminClient = createSupabaseAdminClient();
   const { data: adminUser, error: adminLookupError } = await adminClient

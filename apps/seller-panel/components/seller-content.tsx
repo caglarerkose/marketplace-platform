@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useSeller,
   type SellerDrawer,
@@ -19,6 +19,14 @@ import { SellerQuestions } from "./seller-questions";
 import { SellerCampaigns } from "./seller-campaigns";
 import { SellerFinance } from "./seller-finance";
 import { SellerAnnouncements } from "./seller-announcements";
+import { SellerDocuments } from "./seller-documents";
+import { SellerInstallments } from "./seller-installments";
+import { SellerShowcase } from "./seller-showcase";
+import { SellerReports } from "./seller-reports";
+import { SellerReviews } from "./seller-reviews";
+import { SellerAccountSettings } from "./seller-account-settings";
+import { SellerShipments } from "./seller-shipments";
+import { SellerImportSources } from "./seller-import-sources";
 const actionDrawer = (
   section: string,
   action: string,
@@ -65,15 +73,17 @@ function Btn({
     </button>
   );
 }
-function Kpis() {
+type DashboardData={summary:{grossSales:number;todayOrders:number;pendingShipment:number;returns:number;averageRating:number;reviewCount:number;availableBalance:number;pendingQuestions:number};metrics:{metric_date:string;gross_sales:number}[]};
+function Kpis({data}:{data:DashboardData|null}) {
+  const s=data?.summary;
   return (
     <div className="seller-kpi-grid">
       {[
-        ["Toplam Satış", "₺125.430,50", "Bu ay ▲ %18,6", "fa-bag-shopping"],
-        ["Bugünkü Sipariş", "32", "Dün: 28 ▲ %14,3", "fa-cart-shopping"],
-        ["Kargolanmayı Bekleyen", "18", "Toplam siparişin %9'u", "fa-truck"],
-        ["İade Talepleri", "6", "Toplam siparişin %3'ü", "fa-rotate-left"],
-        ["Ortalama Puan", "4.7", "★★★★★ (812)", "fa-star"],
+        ["Toplam Satış", Number(s?.grossSales||0).toLocaleString("tr-TR",{style:"currency",currency:"TRY"}), "Son 30 gün", "fa-bag-shopping"],
+        ["Bugünkü Sipariş", String(s?.todayOrders||0), "Bugünkü gerçek sipariş", "fa-cart-shopping"],
+        ["Kargolanmayı Bekleyen", String(s?.pendingShipment||0), "Hazırlanacak sipariş", "fa-truck"],
+        ["İade Talepleri", String(s?.returns||0), "Son 30 gün", "fa-rotate-left"],
+        ["Ortalama Puan", Number(s?.averageRating||0).toLocaleString("tr-TR",{maximumFractionDigits:1}), `${s?.reviewCount||0} değerlendirme`, "fa-star"],
       ].map((x, i) => (
         <article className="kpi" key={x[0]}>
           <i className={`fa-solid ${x[3]}`} />
@@ -89,6 +99,8 @@ function Kpis() {
 }
 function Dashboard() {
   const { openDrawer, setActive, openCampaign } = useSeller();
+  const [data,setData]=useState<DashboardData|null>(null);
+  useEffect(()=>{void fetch("/api/dashboard").then(async r=>{if(r.ok)setData(await r.json())})},[]);
   return (
     <>
       <div className="page-head">
@@ -106,9 +118,9 @@ function Dashboard() {
           </Btn>
         </div>
       </div>
-      <Kpis />
+      <Kpis data={data} />
       <div className="grid-3">
-        <Chart />
+        <Chart data={data} />
         <OrderPreview />
         <QuestionList />
       </div>
@@ -146,7 +158,8 @@ function Dashboard() {
     </>
   );
 }
-function Chart() {
+function Chart({data}:{data:DashboardData|null}) {
+  const sales=Number(data?.summary.grossSales||0), orders=(data?.metrics||[]).reduce((n,x)=>n+Number(x.gross_sales>0),0);
   return (
     <div className="card">
       <div className="card-head">
@@ -160,10 +173,10 @@ function Chart() {
         <div className="chart">
           <div className="chart-meta">
             <span>
-              Toplam Satış<b>₺125.430,50</b>
+              Toplam Satış<b>{sales.toLocaleString("tr-TR",{style:"currency",currency:"TRY"})}</b>
             </span>
             <span>
-              Dönüşüm<b>%2,86</b>
+              Satış Günü<b>{orders}</b>
             </span>
           </div>
           <svg preserveAspectRatio="none" viewBox="0 0 620 185">
@@ -184,6 +197,8 @@ function OrderPreview() {
 }
 function QuestionList() {
   const { openDrawer, setActive } = useSeller();
+  const [questions, setQuestions] = useState<{id:string;question:string;answer:string|null}[]>([]);
+  useEffect(() => { void fetch("/api/product-questions").then(async response => { if (response.ok) setQuestions((await response.json()).questions || []); }); }, []);
   return (
     <div className="card">
       <div className="card-head">
@@ -193,20 +208,21 @@ function QuestionList() {
         </button>
       </div>
       <div className="card-body list">
-        {["Garanti süresi nedir?", "Aynı gün kargo olur mu?"].map((x) => (
-          <div className="row" key={x}>
+        {questions.filter((x) => !x.answer).slice(0, 2).map((x) => (
+          <div className="row" key={x.id}>
             <div className="product-thumb">
               <i className="fa-solid fa-question" />
             </div>
-            <div className="row-title">{x}</div>
+            <div className="row-title">{x.question}</div>
             <button
               className="pill"
-              onClick={() => openDrawer({ type: "question", record: x })}
+              onClick={() => openDrawer({ type: "question", record: x.question })}
             >
               Yanıtla
             </button>
           </div>
         ))}
+        {!questions.some((x) => !x.answer) && <div className="empty-mini-state">Yanıt bekleyen müşteri sorusu bulunmuyor.</div>}
       </div>
     </div>
   );
@@ -214,6 +230,8 @@ function QuestionList() {
 function Notices() {
   const { setActive } = useSeller();
   const [open, setOpen] = useState(0);
+  const [notices, setNotices] = useState<{id:string;title:string;body:string}[]>([]);
+  useEffect(() => { void fetch("/api/announcements").then(async response => { if (response.ok) setNotices((await response.json()).announcements || []); }); }, []);
   return (
     <div className="card">
       <div className="card-head">
@@ -226,24 +244,22 @@ function Notices() {
         </button>
       </div>
       <div className="card-body">
-        {[
-          "Komisyon Oranları Güncellendi",
-          "Süper İndirim Günleri Başlıyor",
-        ].map((x, i) => (
-          <div className={`accordion ${open === i ? "open" : ""}`} key={x}>
+        {notices.slice(0, 2).map((x, i) => (
+          <div className={`accordion ${open === i ? "open" : ""}`} key={x.id}>
             <button onClick={() => setOpen(open === i ? -1 : i)}>
-              {x}
+              {x.title}
               <i className="fa-solid fa-chevron-down" />
             </button>
-            <p>Mağazanız için yayınlanan duyurunun ayrıntıları.</p>
+            <p>{x.body}</p>
           </div>
         ))}
+        {!notices.length && <div className="empty-mini-state">Yayınlanmış mağaza duyurusu bulunmuyor.</div>}
       </div>
     </div>
   );
 }
 function OrderBoard() {
-  return <><SellerOrders /><SellerOrderRequests /></>;
+  return <><SellerOrders /><SellerOrderRequests /><SellerShipments /></>;
 }
 function Functional({
   s,
@@ -455,14 +471,30 @@ export function SellerContent() {
         <SellerInventory />
       ) : s.id === "seller-top-profile" ? (
         <SellerStoreProfile />
+      ) : s.id === "seller-top-showcase" ? (
+        <SellerShowcase mode="showcase" />
+      ) : s.id === "seller-top-product-ranking" ? (
+        <SellerShowcase mode="ranking" />
       ) : s.id === "messages" ? (
         <><SellerSupport /><SellerQuestions /></>
       ) : s.id === "campaigns" ? (
         <SellerCampaigns />
       ) : s.id === "finance" ? (
         <SellerFinance />
+      ) : s.id === "reports" ? (
+        <SellerReports />
+      ) : s.id === "comments" ? (
+        <SellerReviews />
+      ) : s.id === "settings" ? (
+        <SellerAccountSettings />
       ) : s.id === "seller-top-announcements" ? (
         <SellerAnnouncements />
+      ) : s.id === "seller-top-documents" ? (
+        <SellerDocuments />
+      ) : s.id === "seller-top-import-sources" ? (
+        <SellerImportSources />
+      ) : s.id === "seller-top-installments" ? (
+        <SellerInstallments />
       ) : data ? (
         <Functional s={s} data={data} />
       ) : (

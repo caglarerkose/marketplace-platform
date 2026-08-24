@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 const applicationSchema = z.object({
   legalName: z.string().trim().min(2).max(180), storeName: z.string().trim().min(2).max(120),
@@ -19,6 +20,8 @@ export async function POST(request: Request) {
   if (contentLength > 20_000) return NextResponse.json({ error: "Başvuru verisi çok büyük." }, { status: 413 });
   const parsed = applicationSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success || parsed.data.website) return NextResponse.json({ error: "Başvuru bilgilerini kontrol edin." }, { status: 400 });
+  const rate = await checkRateLimit(request, "seller_application", parsed.data.email, 4, 86400);
+  if (!rate.allowed) return NextResponse.json({ error: rate.unavailable ? "Güvenlik kontrolü geçici olarak kullanılamıyor." : "Bu bilgilerle çok fazla başvuru denemesi yapıldı." }, { status: rate.unavailable ? 503 : 429, headers: { "Retry-After": String(rate.retryAfter) } });
 
   const adminClient = createSupabaseAdminClient();
   const { data: registeredSeller, error: sellerLookupError } = await adminClient

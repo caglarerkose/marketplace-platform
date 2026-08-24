@@ -1,0 +1,34 @@
+import "server-only";
+import { createHash } from "node:crypto";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+export async function checkRateLimit(
+  request: Request,
+  scope: string,
+  identifier: string,
+  limit: number,
+  windowSeconds: number,
+) {
+  const forwarded =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "unknown",
+    hash = createHash("sha256")
+      .update(`${scope}|${forwarded}|${identifier.trim().toLowerCase()}`)
+      .digest("hex"),
+    { data, error } = await createSupabaseAdminClient().rpc(
+      "consume_api_rate_limit",
+      {
+        p_scope: scope,
+        p_subject_hash: hash,
+        p_limit: limit,
+        p_window_seconds: windowSeconds,
+      },
+    );
+  if (error) return { allowed: false, retryAfter: 60, unavailable: true };
+  const row = data?.[0];
+  return {
+    allowed: Boolean(row?.allowed),
+    retryAfter: Number(row?.retry_after_seconds || 0),
+    unavailable: false,
+  };
+}

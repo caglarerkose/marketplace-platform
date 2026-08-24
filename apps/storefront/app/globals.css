@@ -444,13 +444,16 @@ select {
 .promo p {
   font-size: 12px;
 }
-.promo button {
+.promo button,
+.promo a {
+  display: inline-block;
   margin-top: 15px;
   border: 0;
   background: #fff;
   color: #7b1c55;
   border-radius: 20px;
   padding: 10px 17px;
+  text-decoration: none;
 }
 .all-products {
   margin-top: 34px;

@@ -9,7 +9,7 @@ export async function GET() {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
   const { data, error } = await client.from("orders")
-    .select("id,order_number,status,payment_status,currency,grand_total,placed_at,created_at,order_items(id,product_title,variant_title,seller_name,product_image_url,quantity,unit_price,line_total,fulfillment_status)")
+    .select("id,order_number,status,payment_status,currency,grand_total,placed_at,created_at,order_items(id,product_title,variant_title,seller_name,product_image_url,quantity,unit_price,line_total,fulfillment_status),shipment_packages(id,package_number,carrier_name,tracking_number,tracking_url,status,estimated_delivery_at,shipped_at,delivered_at,shipment_events(status,description,location,event_at))")
     .eq("customer_user_id", user.id).order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: "Siparişler alınamadı." }, { status: 500 });
   return NextResponse.json({ orders: data || [] });

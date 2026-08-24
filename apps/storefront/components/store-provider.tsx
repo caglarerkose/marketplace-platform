@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Product } from "@/data/catalog";
+import { COOKIE_CONSENT_EVENT, hasCookieConsent, type CookieConsent } from "@/lib/cookie-consent";
 
 export type CartItem = { product: Product; quantity: number; selected: boolean };
 type ShoppingState = { cart: CartItem[]; favorites: string[]; favoriteProducts: Product[] };
@@ -22,6 +23,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [lastAdded, setLastAdded] = useState<Product | null>(null);
   const authenticated = useRef(false);
   const hydrated = useRef(false);
+  const functionalStorageAllowed = useRef(false);
+  const shoppingState = useRef({ cart, favorites, favoriteProducts });
+  shoppingState.current = { cart, favorites, favoriteProducts };
 
   const flash = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 1800); };
   const sync = (body: Record<string, unknown>) => {
@@ -32,22 +36,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    try {
-      setCart(JSON.parse(localStorage.getItem("bx-cart") || "[]"));
-      setFavorites(JSON.parse(localStorage.getItem("bx-favorites") || "[]"));
-      setFavoriteProducts(JSON.parse(localStorage.getItem("bx-favorite-products") || "[]"));
-    } catch { /* Bozuk tarayıcı verisi alışveriş akışını engellememeli. */ }
+    functionalStorageAllowed.current = hasCookieConsent("functional");
+    if (functionalStorageAllowed.current) {
+      try {
+        setCart(JSON.parse(localStorage.getItem("bx-cart") || "[]"));
+        setFavorites(JSON.parse(localStorage.getItem("bx-favorites") || "[]"));
+        setFavoriteProducts(JSON.parse(localStorage.getItem("bx-favorite-products") || "[]"));
+      } catch { /* Bozuk tarayıcı verisi alışveriş akışını engellememeli. */ }
+    }
+    const updateStorageConsent = (event: Event) => {
+      const consent = (event as CustomEvent<CookieConsent>).detail;
+      functionalStorageAllowed.current = consent.functional;
+      if (consent.functional) {
+        localStorage.setItem("bx-cart", JSON.stringify(shoppingState.current.cart));
+        localStorage.setItem("bx-favorites", JSON.stringify(shoppingState.current.favorites));
+        localStorage.setItem("bx-favorite-products", JSON.stringify(shoppingState.current.favoriteProducts));
+      } else {
+        localStorage.removeItem("bx-cart");
+        localStorage.removeItem("bx-favorites");
+        localStorage.removeItem("bx-favorite-products");
+      }
+    };
+    window.addEventListener(COOKIE_CONSENT_EVENT, updateStorageConsent);
     void fetch("/api/customer/shopping-state").then(async (response) => {
       if (!response.ok) return;
       const state = (await response.json()) as ShoppingState;
       authenticated.current = true;
       setCart(state.cart); setFavorites(state.favorites); setFavoriteProducts(state.favoriteProducts);
     }).finally(() => { hydrated.current = true; });
+    return () => window.removeEventListener(COOKIE_CONSENT_EVENT, updateStorageConsent);
   }, []);
 
-  useEffect(() => { if (hydrated.current) localStorage.setItem("bx-cart", JSON.stringify(cart)); }, [cart]);
   useEffect(() => {
-    if (!hydrated.current) return;
+    if (hydrated.current && functionalStorageAllowed.current && !authenticated.current)
+      localStorage.setItem("bx-cart", JSON.stringify(cart));
+  }, [cart]);
+  useEffect(() => {
+    if (!hydrated.current || !functionalStorageAllowed.current || authenticated.current) return;
     localStorage.setItem("bx-favorites", JSON.stringify(favorites));
     localStorage.setItem("bx-favorite-products", JSON.stringify(favoriteProducts));
   }, [favorites, favoriteProducts]);

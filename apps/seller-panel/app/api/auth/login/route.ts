@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createAuthServerClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 const schema=z.object({email:z.string().trim().toLowerCase().email(),password:z.string().min(8)});
 export async function POST(request:Request){
  const parsed=schema.safeParse(await request.json().catch(()=>null));
  if(!parsed.success)return NextResponse.json({error:"E-posta veya şifre hatalı."},{status:400});
+ const rate=await checkRateLimit(request,"seller_login",parsed.data.email,8,900);
+ if(!rate.allowed)return NextResponse.json({error:rate.unavailable?"Güvenlik kontrolü geçici olarak kullanılamıyor.":"Çok fazla giriş denemesi yapıldı. Lütfen daha sonra tekrar deneyin."},{status:rate.unavailable?503:429,headers:{"Retry-After":String(rate.retryAfter)}});
  const auth=await createAuthServerClient();
  const {data,error}=await auth.auth.signInWithPassword(parsed.data);
  if(error||!data.user)return NextResponse.json({error:"E-posta veya şifre hatalı."},{status:401});

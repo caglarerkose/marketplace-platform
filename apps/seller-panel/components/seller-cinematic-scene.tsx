@@ -13,7 +13,7 @@ export function SellerCinematicScene() {
             <header><div><small>Satıcı Paneli</small><strong>Mağaza Özeti</strong></div><span><i /> Canlı</span></header>
             <div className="cinema-kpis">
               <article><small>Toplam Sipariş</small><strong>1.248</strong><em>↗ %18</em></article>
-              <article><small>Toplam Ciro</small><strong>₺125.430</strong><em>↗ %22</em></article>
+              <article><small>Mağaza Yönetimi</small><strong>Tek Panel</strong><em>Güvenli</em></article>
             </div>
             <div className="cinema-analytics">
               <article className="cinema-sales-chart">
@@ -27,7 +27,7 @@ export function SellerCinematicScene() {
               </article>
               <article className="cinema-donut-card"><strong>Hedef</strong><div className="cinema-donut"><span>78<small>%</small></span></div><small>Bu ay</small></article>
             </div>
-            <div className="cinema-bestseller"><div><small>En Çok Satanlar</small><strong>Premium Kulaklık</strong><span>328 satış</span></div><div className="cinema-product"><i className="fa-solid fa-headphones"/><span>₺1.249</span></div></div>
+            <div className="cinema-bestseller"><div><small>Ürün Yönetimi</small><strong>Katalog ve Sipariş</strong><span>Tek merkezden yönetin</span></div><div className="cinema-product"><i className="fa-solid fa-box-open"/><span>Aktif</span></div></div>
           </div>
           <div className="cinema-store-base"><span /><span /><span /></div>
         </div>
