@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./order-requests.css";
 import "./support-management.css";
+import "./seller-management.css";
 import "./notifications.css";
 
 export const metadata: Metadata = { title: "BişeyEksik Admin", description: "BişeyEksik pazaryeri yönetim paneli" };

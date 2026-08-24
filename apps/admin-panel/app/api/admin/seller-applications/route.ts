@@ -15,6 +15,7 @@ export async function GET() {
       .order("created_at", { ascending: false }),
     adminClient.from("stores")
       .select("id,name,slug,status,created_at,sellers!inner(id,legal_name,status,approved_application_id)")
+      .neq("sellers.status", "closed")
       .order("created_at", { ascending: false }),
   ]);
 
