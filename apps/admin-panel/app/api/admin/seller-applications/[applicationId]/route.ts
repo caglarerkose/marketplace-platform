@@ -90,7 +90,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ appli
       const { data: invitation, error: invitationError } = await adminClient.auth.admin.inviteUserByEmail(
         application.contact_email,
         {
-          redirectTo: `${sellerPanelUrl}/auth/callback?next=/set-password`,
+          redirectTo: `${sellerPanelUrl}/davet/onay?sonraki=/sifre-olustur`,
           data: {
             account_type: "seller",
             display_name: application.authorized_name,
