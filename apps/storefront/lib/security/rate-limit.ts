@@ -1,6 +1,31 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
+const fallbackLimits = new Map<string, { count: number; startedAt: number }>();
+
+function consumeFallbackLimit(
+  key: string,
+  limit: number,
+  windowSeconds: number,
+) {
+  const now = Date.now();
+  const current = fallbackLimits.get(key);
+  if (!current || current.startedAt + windowSeconds * 1000 <= now) {
+    fallbackLimits.set(key, { count: 1, startedAt: now });
+    return { allowed: true, retryAfter: 0, unavailable: false };
+  }
+  current.count += 1;
+  fallbackLimits.set(key, current);
+  return {
+    allowed: current.count <= limit,
+    retryAfter: Math.max(
+      1,
+      Math.ceil((current.startedAt + windowSeconds * 1000 - now) / 1000),
+    ),
+    unavailable: false,
+  };
+}
 export async function checkRateLimit(
   request: Request,
   scope: string,
@@ -24,7 +49,13 @@ export async function checkRateLimit(
         p_window_seconds: windowSeconds,
       },
     );
-  if (error) return { allowed: false, retryAfter: 60, unavailable: true };
+  if (error) {
+    console.error("rate_limit_rpc_failed", {
+      scope,
+      code: error.code,
+    });
+    return consumeFallbackLimit(scope + ":" + hash, limit, windowSeconds);
+  }
   const row = data?.[0];
   return {
     allowed: Boolean(row?.allowed),

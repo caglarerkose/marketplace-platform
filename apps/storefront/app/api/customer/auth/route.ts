@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 const schema = z.object({
   mode: z.enum(["login", "register"]),
   email: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(8),
+  confirmPassword: z.string().default(""),
   displayName: z.string().trim().max(120).default(""),
-});
+}).refine(
+  (value) => value.mode === "login" || value.password === value.confirmPassword,
+  { message: "Şifreler eşleşmiyor.", path: ["confirmPassword"] },
+);
 export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (
@@ -39,8 +44,9 @@ export async function POST(request: Request) {
       },
     );
   const client = await createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
   if (v.mode === "login") {
-    const { data, error } = await client.auth.signInWithPassword({
+    const { data, error } = await admin.auth.signInWithPassword({
       email: v.email,
       password: v.password,
     });
@@ -49,29 +55,66 @@ export async function POST(request: Request) {
         { error: "E-posta veya şifre hatalı." },
         { status: 401 },
       );
+    const { error: sessionError } = await client.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+    if (sessionError)
+      return NextResponse.json(
+        { error: "Oturum başlatılamadı. Lütfen tekrar deneyin." },
+        { status: 503 },
+      );
     return NextResponse.json({ ok: true, destination: "/hesabim" });
   }
-  const { data, error } = await client.auth.signUp({
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
     email: v.email,
     password: v.password,
-    options: {
-      data: { display_name: v.displayName },
-        emailRedirectTo: `${new URL(request.url).origin}/auth/callback?next=/hesabim`,
+    email_confirm: true,
+    user_metadata: {
+      account_type: "customer",
+      display_name: v.displayName,
     },
   });
-  if (error)
+  if (createError || !created.user) {
+    const duplicate =
+      createError?.status === 422 ||
+      createError?.message.toLocaleLowerCase("en-US").includes("already");
     return NextResponse.json(
-      { error: "Hesap oluşturulamadı. Bilgileri kontrol edin." },
-      { status: 400 },
+      {
+        error: duplicate
+          ? "Bu e-posta adresiyle kayıtlı bir hesap zaten mevcut."
+          : "Hesap oluşturulamadı. Lütfen tekrar deneyin.",
+      },
+      { status: duplicate ? 409 : 400 },
     );
+  }
+
+  const { data: session, error: signInError } =
+    await admin.auth.signInWithPassword({
+      email: v.email,
+      password: v.password,
+    });
+  if (signInError || !session.session) {
+    await admin.auth.admin.deleteUser(created.user.id);
+    return NextResponse.json(
+      { error: "Hesap oturumu başlatılamadı. Lütfen tekrar deneyin." },
+      { status: 503 },
+    );
+  }
+  const { error: sessionError } = await client.auth.setSession({
+    access_token: session.session.access_token,
+    refresh_token: session.session.refresh_token,
+  });
+  if (sessionError) {
+    await admin.auth.admin.deleteUser(created.user.id);
+    return NextResponse.json(
+      { error: "Hesap oturumu başlatılamadı. Lütfen tekrar deneyin." },
+      { status: 503 },
+    );
+  }
+
   return NextResponse.json(
-    {
-      ok: true,
-      destination: data.session ? "/hesabim" : null,
-      message: data.session
-        ? null
-        : "E-posta adresinize gönderilen doğrulama bağlantısını açın.",
-    },
+    { ok: true, destination: "/hesabim" },
     { status: 201 },
   );
 }

@@ -17,29 +17,50 @@ export default function CustomerLogin() {
         .trim()
         .toLowerCase(),
       password = String(form.get("password") || ""),
+      confirmPassword = String(form.get("confirmPassword") || ""),
       displayName = String(form.get("displayName") || "").trim();
     if (password.length < 8) {
       setError("Şifre en az 8 karakter olmalıdır.");
       setLoading(false);
       return;
     }
-    const response = await fetch("/api/customer/auth", {
+    if (mode === "register" && password !== confirmPassword) {
+      setError("Şifreler eşleşmiyor.");
+      setLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch("/api/customer/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, email, password, displayName }),
-      }),
-      result = await response.json();
-    setLoading(false);
-    if (!response.ok) {
-      setError(result.error || "İşlem tamamlanamadı.");
-      return;
+        body: JSON.stringify({
+          mode,
+          email,
+          password,
+          confirmPassword,
+          displayName,
+        }),
+        signal: controller.signal,
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) {
+        setError(result?.error || "İşlem tamamlanamadı.");
+        return;
+      }
+      router.replace(result?.destination || "/hesabim");
+      router.refresh();
+    } catch (requestError) {
+      setError(
+        requestError instanceof DOMException && requestError.name === "AbortError"
+          ? "İşlem zaman aşımına uğradı. Lütfen tekrar deneyin."
+          : "Bağlantı kurulamadı. Lütfen tekrar deneyin.",
+      );
+    } finally {
+      window.clearTimeout(timeout);
+      setLoading(false);
     }
-    if (result.message && !result.destination) {
-      setError(result.message);
-      return;
-    }
-    router.replace(result.destination || "/hesabim");
-    router.refresh();
   }
   return (
     <div className="customer-auth-page">
@@ -53,6 +74,7 @@ export default function CustomerLogin() {
         />
         <div className="customer-auth-tabs">
           <button
+            type="button"
             className={mode === "login" ? "active" : ""}
             onClick={() => {
               setMode("login");
@@ -62,6 +84,7 @@ export default function CustomerLogin() {
             Giriş Yap
           </button>
           <button
+            type="button"
             className={mode === "register" ? "active" : ""}
             onClick={() => {
               setMode("register");
@@ -99,6 +122,18 @@ export default function CustomerLogin() {
               }
             />
           </label>
+          {mode === "register" && (
+            <label>
+              Şifre Tekrar
+              <input
+                name="confirmPassword"
+                type="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
+            </label>
+          )}
           {error && (
             <div className="customer-auth-message" role="alert">
               {error}
