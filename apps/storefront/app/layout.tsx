@@ -5,9 +5,11 @@ import { Footer } from "@/components/footer";
 import { StoreProvider } from "@/components/store-provider";
 import { StoreToast } from "@/components/store-toast";
 import { CookieConsent } from "@/components/cookie-consent";
+import { GlobalBusyIndicator } from "@/components/global-busy-indicator";
 import { getSeoSettings } from "@/lib/seo-settings";
 import "./globals.css";
 import "./cookie-consent.css";
+import "./busy-indicator.css";
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSeoSettings(),
     title = s?.meta_title || "BişeyEksik | Aradığın Her Şey",
@@ -54,6 +56,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         />
       </head>
       <body>
+        <GlobalBusyIndicator />
         <StoreProvider>
           <SiteHeader />
           <main>{children}</main>
