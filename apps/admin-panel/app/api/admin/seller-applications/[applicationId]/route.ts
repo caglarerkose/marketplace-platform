@@ -227,6 +227,7 @@ export async function PATCH(
     }
     let applicantUserId = application.applicant_user_id;
     let invitedNow = false;
+    let resendExistingInvitation = false;
     if (!applicantUserId) {
       const { data: invitation, error: invitationError } =
         await adminClient.auth.admin.inviteUserByEmail(
@@ -244,28 +245,82 @@ export async function PATCH(
           invitationError?.message
             .toLocaleLowerCase("en-US")
             .includes("already") || invitationError?.status === 422;
-        return NextResponse.json(
-          {
-            error: registered
-              ? "Bu e-posta adresiyle bir hesap zaten mevcut."
-              : "Satıcı daveti gönderilemedi.",
-          },
-          { status: registered ? 409 : 503 },
+        if (!registered) {
+          return NextResponse.json(
+            { error: "Satıcı daveti gönderilemedi." },
+            { status: 503 },
+          );
+        }
+        const usersResult = await adminClient.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000,
+        });
+        const existingUser = usersResult.data?.users.find(
+          (user) =>
+            user.email?.toLocaleLowerCase("en-US") ===
+            application.contact_email.toLocaleLowerCase("en-US"),
         );
+        if (
+          usersResult.error ||
+          !existingUser ||
+          existingUser.user_metadata?.account_type !== "seller"
+        ) {
+          return NextResponse.json(
+            {
+              error:
+                "Bu e-posta adresiyle farklı türde bir hesap zaten mevcut.",
+            },
+            { status: 409 },
+          );
+        }
+        const { data: existingSeller } = await adminClient
+          .from("sellers")
+          .select("id")
+          .eq("owner_user_id", existingUser.id)
+          .maybeSingle();
+        if (existingSeller) {
+          return NextResponse.json(
+            { error: "Bu e-posta adresiyle kayıtlı satıcı zaten mevcut." },
+            { status: 409 },
+          );
+        }
+        applicantUserId = existingUser.id;
+        resendExistingInvitation = true;
+      } else {
+        applicantUserId = invitation.user.id;
+        invitedNow = true;
       }
-      applicantUserId = invitation.user.id;
-      invitedNow = true;
       const { error: linkError } = await adminClient
         .from("seller_applications")
         .update({ applicant_user_id: applicantUserId })
         .eq("id", applicationId)
         .is("applicant_user_id", null);
       if (linkError) {
-        await adminClient.auth.admin.deleteUser(applicantUserId);
+        if (invitedNow)
+          await adminClient.auth.admin.deleteUser(applicantUserId);
         return NextResponse.json(
           { error: "Davet kullanıcısı başvuruya bağlanamadı." },
           { status: 500 },
         );
+      }
+      if (resendExistingInvitation) {
+        const { error: resendError } =
+          await adminClient.auth.resetPasswordForEmail(
+            application.contact_email,
+            {
+              redirectTo: `${sellerPanelUrl}/davet/onay?sonraki=/sifre-olustur`,
+            },
+          );
+        if (resendError) {
+          await adminClient
+            .from("seller_applications")
+            .update({ applicant_user_id: null })
+            .eq("id", applicationId);
+          return NextResponse.json(
+            { error: "Yeni satıcı şifre bağlantısı gönderilemedi." },
+            { status: 503 },
+          );
+        }
       }
     }
     const storeSlug = await availableStoreSlug(
