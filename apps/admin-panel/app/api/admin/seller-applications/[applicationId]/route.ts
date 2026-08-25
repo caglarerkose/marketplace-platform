@@ -275,10 +275,10 @@ export async function PATCH(
         }
         const { data: existingSeller } = await adminClient
           .from("sellers")
-          .select("id")
+          .select("id,status")
           .eq("owner_user_id", existingUser.id)
           .maybeSingle();
-        if (existingSeller) {
+        if (existingSeller && existingSeller.status !== "closed") {
           return NextResponse.json(
             { error: "Bu e-posta adresiyle kayıtlı satıcı zaten mevcut." },
             { status: 409 },
