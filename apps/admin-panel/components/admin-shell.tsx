@@ -45,12 +45,6 @@ type Ctx = {
   logAction: (m: string, s: string, r?: string) => void;
 };
 const Context = createContext<Ctx | null>(null);
-const backendReadySections = new Set([
-  "admin-users",
-  "audit-logs",
-  "categories",
-  "sellers",
-]);
 const superAdminSections = new Set(["admin-users", "audit-logs"]);
 export const useAdmin = () => {
   const v = useContext(Context);
@@ -591,15 +585,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 {x.title}
                 {Boolean(navigationCounts[x.id]) && (
                   <span className="nav-badge">{navigationCounts[x.id]}</span>
-                )}
-                {backendReadySections.has(x.id) && (
-                  <span
-                    className="backend-ready-check"
-                    title="Backend bağlantısı tamamlandı"
-                    aria-label="Backend bağlantısı tamamlandı"
-                  >
-                    <i className="fa-solid fa-check" />
-                  </span>
                 )}
               </button>
             ))}
