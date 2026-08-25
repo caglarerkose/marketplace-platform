@@ -52,7 +52,7 @@ export function AdminSeoSettings() {
         <div className="page-title">
           <h1>
             SEO / Sayfalar{" "}
-            <i className="fa-solid fa-circle-check backend-tick" />
+
           </h1>
           <p>
             Meta alanlarını, indeksleme ve site kimliği bilgilerini yönetin.

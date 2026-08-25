@@ -43,10 +43,7 @@ export default async function Home() {
         <header>
           <h2>
             Tüm Ürünler{" "}
-            <i
-              className="fa-solid fa-circle-check storefront-backend-tick"
-              title="Backend bağlantısı tamamlandı"
-            />
+
           </h2>
           <p>Senin için seçtiğimiz fırsatları keşfet</p>
         </header>

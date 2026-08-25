@@ -38,10 +38,7 @@ export function ProductBrowser({
       <div className="title">
           <h1>
             {title}{" "}
-            <i
-              className="fa-solid fa-circle-check storefront-backend-tick"
-              title="Backend bağlantısı tamamlandı"
-            />
+
           </h1>
         <p>{description}</p>
       </div>

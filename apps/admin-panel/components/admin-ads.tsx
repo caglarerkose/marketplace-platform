@@ -72,7 +72,7 @@ export function AdminAds() {
         <div className="page-title">
           <h1>
             Reklam Alanları{" "}
-            <i className="fa-solid fa-circle-check backend-tick" />
+
           </h1>
           <p>
             Reklam konumlarını, tarihlerini ve görünürlük kurallarını yönetin.

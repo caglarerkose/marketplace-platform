@@ -24,12 +24,12 @@ export function ProductFeedback({ productId, offerId }: { productId?: string; of
   }
   const average = reviews.length ? reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length : 0;
   return <section className="product-feedback">
-    <div className="product-feedback-column"><header><h2>Ürün Soruları <i className="fa-solid fa-circle-check storefront-backend-tick" /></h2><span>{questions.length} yanıt</span></header>
+    <div className="product-feedback-column"><header><h2>Ürün Soruları </h2><span>{questions.length} yanıt</span></header>
       {offerId && <form onSubmit={ask}><textarea name="question" required minLength={5} maxLength={1000} placeholder="Bu ürün hakkında mağazaya soru sorun" /><button disabled={sending}><i className="fa-solid fa-paper-plane" /> {sending ? "Gönderiliyor" : "Soruyu Gönder"}</button></form>}
       {message && <p className="feedback-message">{message}</p>}
       <div className="feedback-list">{questions.length ? questions.map(item => <article key={item.id}><b>{item.question}</b>{item.answer && <p><i className="fa-solid fa-store" /> {item.answer}</p>}<small>{item.stores?.name || "Mağaza"}</small></article>) : <p className="feedback-empty">Henüz yayınlanmış soru bulunmuyor.</p>}</div>
     </div>
-    <div className="product-feedback-column"><header><h2>Değerlendirmeler <i className="fa-solid fa-circle-check storefront-backend-tick" /></h2><span>{average ? `${average.toFixed(1)} / 5` : "Yeni"}</span></header>
+    <div className="product-feedback-column"><header><h2>Değerlendirmeler </h2><span>{average ? `${average.toFixed(1)} / 5` : "Yeni"}</span></header>
       <div className="feedback-list">{reviews.length ? reviews.map(item => <article key={item.id}><div className="feedback-stars">{"★".repeat(item.rating)}{"☆".repeat(5 - item.rating)}</div>{item.title && <b>{item.title}</b>}{item.body && <p>{item.body}</p>}<small>Doğrulanmış alışveriş</small></article>) : <p className="feedback-empty">Henüz yayınlanmış değerlendirme bulunmuyor.</p>}</div>
     </div>
   </section>;

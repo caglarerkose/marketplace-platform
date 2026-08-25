@@ -106,7 +106,7 @@ export function AdminMobileSettings() {
         <div className="page-title">
           <h1>
             Mobil Ayarlar{" "}
-            <i className="fa-solid fa-circle-check backend-tick" />
+
           </h1>
           <p>
             Mobil navigasyon, uygulama bannerı ve görünüm tercihlerini yönetin.

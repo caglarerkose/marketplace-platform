@@ -64,7 +64,7 @@ export function SellerProducts() {
 
   return <>
     <div className="page-head">
-      <div className="page-title"><h1>Ürünlerim <i className="fa-solid fa-circle-check backend-tick" title="Backend bağlantısı tamamlandı" /></h1><p>Tekil ürün ekleyin ve katalog onay durumlarını takip edin.</p></div>
+      <div className="page-title"><h1>Ürünlerim </h1><p>Tekil ürün ekleyin ve katalog onay durumlarını takip edin.</p></div>
       <div className="head-actions"><button className="btn primary" onClick={() => { setError(""); setOpen(true); }}><i className="fa-solid fa-plus" /> Tekil Ürün Ekle</button></div>
     </div>
     <div className="catalog-board">{stats.map((item) => <article className={String(item[3])} key={String(item[0])}><i className={`fa-solid ${item[2]}`} /><h4>{item[0]}</h4><b>{item[1]}</b><span>Güncel mağaza verisi</span></article>)}</div>
