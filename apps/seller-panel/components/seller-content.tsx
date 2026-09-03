@@ -22,6 +22,7 @@ import { SellerAnnouncements } from "./seller-announcements";
 import { SellerDocuments } from "./seller-documents";
 import { SellerInstallments } from "./seller-installments";
 import { SellerShowcase } from "./seller-showcase";
+import { SellerShowcaseLayout } from "./seller-layout-editor";
 import { SellerReports } from "./seller-reports";
 import { SellerReviews } from "./seller-reviews";
 import { SellerAccountSettings } from "./seller-account-settings";
@@ -268,6 +269,7 @@ function Functional({
   s: SellerSection;
   data: SellerContentData;
 }) {
+  const [localFormOpen, setLocalFormOpen] = useState(false);
   const { openDrawer, notify, logAction, openCampaign, setActive } =
     useSeller();
   const contentTitle =
@@ -289,6 +291,10 @@ function Functional({
               ? "Admin tarafından kategori bazlı belirlenen taksit kurallarının mağazanıza ve ürünlerinize etkisini görüntüleyin."
               : s.description;
   const act = (a: string, r?: string) => {
+    if (data.fields && a === data.primary) {
+      setLocalFormOpen(true);
+      return;
+    }
     if (/Yenile/.test(a)) {
       notify(`${s.title} yenilendi`);
       return;
@@ -348,7 +354,9 @@ function Functional({
         </div>
       )}
       {s.id === "orders" && <OrderBoard />}
-      {data.fields && <LocalForm s={s} data={data} />}{" "}
+      {data.fields && localFormOpen && (
+        <LocalForm s={s} data={data} close={() => setLocalFormOpen(false)} />
+      )}{" "}
       {data.cards && (
         <div className="module-grid functional-modules">
           {data.cards.map((x) => (
@@ -406,7 +414,7 @@ function Functional({
     </>
   );
 }
-function LocalForm({ s, data }: { s: SellerSection; data: SellerContentData }) {
+function LocalForm({ s, data, close }: { s: SellerSection; data: SellerContentData; close: () => void }) {
   const { notify, logAction } = useSeller();
   const save = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -416,14 +424,15 @@ function LocalForm({ s, data }: { s: SellerSection; data: SellerContentData }) {
     );
     logAction(s.title, "Ayarlar kaydedildi");
     notify(`${s.title} kaydedildi`);
+    close();
   };
   return (
-    <form className="card seller-form-card" onSubmit={save}>
-      <div className="card-head">
-        <h3>{s.title} Ayarları</h3>
-        <span className="link">Yerel taslak</span>
-      </div>
-      <div className="card-body form-grid">
+    <div className="modal-overlay" onClick={close}>
+      <form className="seller-request-modal" onSubmit={save} onClick={(event) => event.stopPropagation()}>
+        <button type="button" className="modal-form-close" onClick={close} aria-label="Kapat">
+          <i className="fa-solid fa-xmark" />
+        </button>
+        <h2>{s.title} İşlemi</h2>
         {data.fields?.map((x, i) => (
           <label
             className={`field ${x.type === "textarea" ? "wide" : ""}`}
@@ -447,14 +456,14 @@ function LocalForm({ s, data }: { s: SellerSection; data: SellerContentData }) {
             )}
           </label>
         ))}
-        <div className="drawer-buttons">
+        <div className="modal-form-actions">
           <button className="btn primary">Kaydet</button>
-          <button className="btn" type="reset">
-            Temizle
+          <button className="btn" type="button" onClick={close}>
+            Vazgeç
           </button>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
 export function SellerContent() {
@@ -472,7 +481,7 @@ export function SellerContent() {
       ) : s.id === "seller-top-profile" ? (
         <SellerStoreProfile />
       ) : s.id === "seller-top-showcase" ? (
-        <SellerShowcase mode="showcase" />
+        <SellerShowcaseLayout />
       ) : s.id === "seller-top-product-ranking" ? (
         <SellerShowcase mode="ranking" />
       ) : s.id === "messages" ? (

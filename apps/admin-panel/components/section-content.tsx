@@ -30,6 +30,7 @@ import { AdminReports } from "./admin-reports";
 import { AdminPlatformSettings } from "./admin-platform-settings";
 import { AdminOrderOperations } from "./admin-order-operations";
 import { AdminStorefrontContent } from "./admin-storefront-content";
+import { AdminHomeLayout } from "./storefront-layout-editor";
 const statusClass = (v: string) =>
   /Aktif|Onay|Tamam|Hazır|Başarılı|Yayında|Teslim/.test(v)
     ? "green"
@@ -256,6 +257,7 @@ function AuditLog() {
   );
 }
 export function SectionContent({ section }: { section: AdminSection }) {
+  const [localFormOpen, setLocalFormOpen] = useState(false);
   const data = sectionContent[section.id],
     { openDrawer, notify, logAction } = useAdmin();
   if (section.id === "admin-users") return <AdminUserManagement />;
@@ -278,13 +280,17 @@ export function SectionContent({ section }: { section: AdminSection }) {
   if (section.id === "top-installments") return <AdminInstallments />;
   if (section.id === "reports") return <AdminReports />;
   if (section.id === "settings") return <AdminPlatformSettings />;
-  if (section.id === "top-home-layout") return <AdminStorefrontContent mode="block" />;
+  if (section.id === "top-home-layout") return <AdminHomeLayout />;
   if (section.id === "top-menu-layout") return <AdminStorefrontContent mode="navigation" />;
   if (section.id === "top-footer-pages") return <AdminStorefrontContent mode="page" />;
   if (section.id === "audit-logs" || section.id === "top-logs")
     return <AdminAuditPanel />;
   if (!data) return <Fallback section={section} />;
   const act = (label: string, record?: string) => {
+    if (data.fields && label === data.primary) {
+      setLocalFormOpen(true);
+      return;
+    }
     if (/Yenile/.test(label)) {
       notify(`${section.title} yenilendi`);
       return;
@@ -352,7 +358,9 @@ export function SectionContent({ section }: { section: AdminSection }) {
         </div>
       )}
       <SectionExtras id={section.id} />
-      {data.fields && <LocalForm section={section} data={data} />}{" "}
+      {data.fields && localFormOpen && (
+        <LocalForm section={section} data={data} close={() => setLocalFormOpen(false)} />
+      )}{" "}
       {data.cards && (
         <div className="module-grid content-modules">
           {data.cards.map(([title, text, action]) => (
@@ -418,9 +426,11 @@ export function SectionContent({ section }: { section: AdminSection }) {
 function LocalForm({
   section,
   data,
+  close,
 }: {
   section: AdminSection;
   data: SectionData;
+  close: () => void;
 }) {
   const { notify, logAction } = useAdmin();
   const key = `biseyeksik_admin_form_${section.id}`;
@@ -432,15 +442,15 @@ function LocalForm({
     );
     logAction(section.title, "Form kaydedildi");
     notify(`${section.title} kaydedildi`);
+    close();
   };
   return (
-    <form className="card content-form" onSubmit={save}>
-      <div className="card-head">
-        <h3>{section.title} Oluştur / Güncelle</h3>
-        <span className="link">Yerel taslak</span>
-      </div>
-      <div className="card-body">
-        <div className="form-grid">
+    <div className="modal-overlay" onClick={close}>
+      <form className="admin-request-modal" onSubmit={save} onClick={(event) => event.stopPropagation()}>
+        <button type="button" className="modal-form-close" onClick={close} aria-label="Kapat">
+          <i className="fa-solid fa-xmark" />
+        </button>
+        <h2>{section.title} İşlemi</h2>
           {data.fields?.map((x, i) => (
             <label
               className={`field ${x.type === "textarea" ? "full" : ""}`}
@@ -460,15 +470,14 @@ function LocalForm({
               )}
             </label>
           ))}
-        </div>
-        <div className="form-actions">
+        <div className="modal-form-actions">
           <button className="btn primary">Kaydet</button>
-          <button className="btn" type="reset">
-            Formu Temizle
+          <button className="btn" type="button" onClick={close}>
+            Vazgeç
           </button>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
 function Fallback({ section }: { section: AdminSection }) {

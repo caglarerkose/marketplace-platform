@@ -161,6 +161,7 @@ export function AdminAds() {
             onSubmit={submit}
             onClick={(e) => e.stopPropagation()}
           >
+            <button type="button" className="modal-form-close" onClick={() => setOpen(false)} aria-label="Kapat"><i className="fa-solid fa-xmark" /></button>
             <h2>Reklam Alanı Oluştur</h2>
             <label>
               Reklam Başlığı
@@ -222,7 +223,10 @@ export function AdminAds() {
               Reklam Metni
               <textarea name="body" required />
             </label>
-            <button className="btn primary">Reklamı Yayınla</button>
+            <div className="modal-form-actions">
+              <button className="btn primary">Reklamı Yayınla</button>
+              <button type="button" className="btn" onClick={() => setOpen(false)}>Vazgeç</button>
+            </div>
           </form>
         </div>
       )}
