@@ -1,0 +1,4 @@
+.layout-device.phone{width:402px;aspect-ratio:1206/2622;padding:27px 10px 12px;border-radius:46px}
+.phone .layout-stage{height:calc(100% - 36px);max-height:none;border-radius:0 0 32px 32px}
+.product-image-field input[type=file]{height:auto;padding:14px;background:#f8f9fb;border-style:dashed}
+.product-image-field small{display:block;margin-top:6px;color:#7b8190;font-size:10px}

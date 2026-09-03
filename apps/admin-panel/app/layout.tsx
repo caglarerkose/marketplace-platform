@@ -5,6 +5,7 @@ import "./support-management.css";
 import "./seller-management.css";
 import "./notifications.css";
 import "./busy-indicator.css";
+import "./visual-editor-overrides.css";
 import { GlobalBusyIndicator } from "@/components/global-busy-indicator";
 
 export const metadata: Metadata = { title: "BişeyEksik Admin", description: "BişeyEksik pazaryeri yönetim paneli" };

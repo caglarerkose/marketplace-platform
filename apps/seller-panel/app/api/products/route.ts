@@ -11,7 +11,8 @@ const productSchema = z.object({
   sku: z.string().trim().min(2).max(80),
   barcode: z.string().trim().regex(/^\d{8,32}$/).optional().or(z.literal("")),
   price: z.coerce.number().positive().max(999999999999),
-  listPrice: z.coerce.number().positive().max(999999999999).optional(),
+  listPrice: z.preprocess(value => value === "" || value === null ? undefined : value, z.coerce.number().positive().max(999999999999).optional()),
+  initialStock: z.coerce.number().int().min(1).max(1000000),
 }).refine((value) => !value.listPrice || value.listPrice >= value.price, {
   message: "Liste fiyatı satış fiyatından düşük olamaz.",
   path: ["listPrice"],
@@ -49,7 +50,12 @@ export async function GET() {
 export async function POST(request: Request) {
   const context = await sellerContext();
   if (!context) return NextResponse.json({ error: "Aktif mağaza oturumu bulunamadı." }, { status: 403 });
-  const parsed = productSchema.safeParse(await request.json().catch(() => null));
+  const form = await request.formData().catch(() => null);
+  if (!form) return NextResponse.json({ error: "Ürün formu okunamadı." }, { status: 400 });
+  const files = form.getAll("images").filter((value): value is File => value instanceof File && value.size > 0);
+  const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
+  if (!files.length || files.length > 6 || files.some(file => !allowed.has(file.type) || file.size > 5 * 1024 * 1024)) return NextResponse.json({ error: "En fazla 6 adet, görsel başına 5 MB JPG, PNG veya WEBP yükleyin." }, { status: 400 });
+  const parsed = productSchema.safeParse(Object.fromEntries([...form.entries()].filter(([key]) => key !== "images")));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message || "Ürün bilgilerini kontrol edin." }, { status: 400 });
   const slug = `${slugify(parsed.data.title)}-${crypto.randomUUID().slice(0, 8)}`;
   const { data, error } = await context.admin.rpc("create_seller_product_submission", {
@@ -62,5 +68,22 @@ export async function POST(request: Request) {
     const duplicate = error.code === "23505";
     return NextResponse.json({ error: duplicate ? "Bu SKU veya barkod daha önce kullanılmış." : "Ürün onaya gönderilemedi." }, { status: duplicate ? 409 : 500 });
   }
+  const created = data?.[0];
+  if (!created?.product_id || !created?.offer_id) return NextResponse.json({ error: "Ürün kaydı tamamlanamadı." }, { status: 500 });
+  const uploaded: string[] = [];
+  for (let index = 0; index < files.length; index++) {
+    const file = files[index], extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg", path = `${context.storeId}/${created.product_id}/${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await context.admin.storage.from("product-images").upload(path, new Uint8Array(await file.arrayBuffer()), { contentType: file.type, upsert: false });
+    if (uploadError) { await context.admin.storage.from("product-images").remove(uploaded); await context.admin.from("catalog_products").delete().eq("id", created.product_id); return NextResponse.json({ error: "Ürün fotoğrafları yüklenemedi." }, { status: 500 }); }
+    uploaded.push(path);
+    const { data: publicUrl } = context.admin.storage.from("product-images").getPublicUrl(path);
+    const { error: mediaError } = await context.admin.from("product_media").insert({ product_id: created.product_id, media_type: "image", url: publicUrl.publicUrl, alt_text: parsed.data.title, sort_order: index, is_primary: index === 0 });
+    if (mediaError) { await context.admin.storage.from("product-images").remove(uploaded); await context.admin.from("catalog_products").delete().eq("id", created.product_id); return NextResponse.json({ error: "Ürün görsel kaydı oluşturulamadı." }, { status: 500 }); }
+  }
+  let { data: warehouse } = await context.admin.from("warehouses").select("id").eq("store_id", context.storeId).eq("status", "active").order("created_at").limit(1).maybeSingle();
+  if (!warehouse) { const result = await context.admin.from("warehouses").insert({ store_id: context.storeId, name: "Ana Depo", code: "ANA", status: "active" }).select("id").single(); warehouse = result.data; }
+  if (!warehouse) { await context.admin.storage.from("product-images").remove(uploaded); await context.admin.from("catalog_products").delete().eq("id", created.product_id); return NextResponse.json({ error: "Ürün stoğu oluşturulamadı." }, { status: 500 }); }
+  const { error: stockError } = await context.admin.from("inventory_balances").insert({ warehouse_id: warehouse.id, offer_id: created.offer_id, on_hand: parsed.data.initialStock });
+  if (stockError) { await context.admin.storage.from("product-images").remove(uploaded); await context.admin.from("catalog_products").delete().eq("id", created.product_id); return NextResponse.json({ error: "Başlangıç stoğu kaydedilemedi." }, { status: 500 }); }
   return NextResponse.json({ ok: true, product: data?.[0] }, { status: 201 });
 }

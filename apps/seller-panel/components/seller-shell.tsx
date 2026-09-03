@@ -453,14 +453,6 @@ export function SellerShell({
           </div>
         </header>
         <aside className={`seller-sidebar ${menu ? "open" : ""}`}>
-          <div className="store-select">
-            <div>{initial}</div>
-            <span>
-              <strong>{store.name}</strong>
-              <small>ONAYLI MAĞAZA</small>
-            </span>
-            <i className="fa-solid fa-check" />
-          </div>
           <nav className="nav-group">
             {sideSections.map((x) => (
               <button

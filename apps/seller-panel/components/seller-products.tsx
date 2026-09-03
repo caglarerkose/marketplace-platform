@@ -52,10 +52,7 @@ export function SellerProducts() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSubmitting(true); setError("");
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/products", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.fromEntries(form.entries())),
-    });
+    const response = await fetch("/api/products", { method: "POST", body: form });
     const result = await response.json();
     setSubmitting(false);
     if (!response.ok) { setError(result.error || "Ürün onaya gönderilemedi."); return; }
@@ -85,6 +82,8 @@ export function SellerProducts() {
         <label className="field">Barkod<input name="barcode" inputMode="numeric" minLength={8} maxLength={32} /></label>
         <label className="field">Satış Fiyatı<input name="price" required type="number" min="0.01" step="0.01" /></label>
         <label className="field">Liste Fiyatı<input name="listPrice" type="number" min="0.01" step="0.01" /></label>
+        <label className="field">Başlangıç Stoğu<input name="initialStock" required type="number" min="1" step="1" defaultValue="1" /></label>
+        <label className="field wide product-image-field">Ürün Fotoğrafları<input name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple required /><small>En fazla 6 adet JPG, PNG veya WEBP; görsel başına 5 MB.</small></label>
         <label className="field wide">Açıklama<textarea name="description" maxLength={5000} /></label>
       </div>{error && <div className="apply-error" role="alert"><i className="fa-solid fa-circle-exclamation" />{error}</div>}<div className="drawer-buttons"><button className="btn primary" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Onaya Gönder"}</button><button className="btn" type="button" onClick={() => setOpen(false)}>Vazgeç</button></div></form>
     </div></div>}

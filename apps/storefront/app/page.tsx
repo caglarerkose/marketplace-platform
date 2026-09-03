@@ -4,6 +4,7 @@ import { ProductCard } from "@/components/product-card";
 import { getActiveProducts } from "@/lib/catalog-products";
 import { getActiveAd } from "@/lib/ads";
 import Link from "next/link";
+import { StorefrontEditBridge } from "@/components/storefront-edit-bridge";
 export default async function Home() {
   const [products, ad] = await Promise.all([
     getActiveProducts(),
@@ -11,6 +12,7 @@ export default async function Home() {
   ]);
   return (
     <div className="home container">
+      <StorefrontEditBridge />
       <Hero />
       {products.length > 0 && (
         <>

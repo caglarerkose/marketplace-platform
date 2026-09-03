@@ -29,6 +29,9 @@ export async function getActiveProducts(): Promise<Product[]> {
     .order("price", { ascending: true });
   if (error) return [];
 
+  const { data: stockRows } = await client.rpc("search_active_offers", { p_query: null, p_category_slug: null, p_min_price: null, p_max_price: null, p_in_stock: false, p_sort: "newest", p_limit: 100, p_offset: 0 });
+  const stocks = new Map<string, number>((stockRows || []).map((row: { offer_id: string; available_stock: number }) => [row.offer_id, Number(row.available_stock)]));
+
   const products = ((data || []) as unknown as OfferRow[]).map((offer) => {
     const catalog = offer.product_variants.catalog_products;
     const media = [...(catalog.product_media || [])].sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order);
@@ -51,7 +54,7 @@ export async function getActiveProducts(): Promise<Product[]> {
       discountPercent,
       price,
       badge: discountPercent ? `%${discountPercent} İndirim` : "Yeni Ürün",
-      stock: 0,
+      stock: stocks.get(offer.id) || 0,
       sellerName: offer.stores?.name || "Mağaza",
       description: catalog.description || undefined,
       variantLabel: offer.product_variants.title,
