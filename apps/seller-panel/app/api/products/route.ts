@@ -83,7 +83,7 @@ export async function POST(request: Request) {
   let { data: warehouse } = await context.admin.from("warehouses").select("id").eq("store_id", context.storeId).eq("status", "active").order("created_at").limit(1).maybeSingle();
   if (!warehouse) { const result = await context.admin.from("warehouses").insert({ store_id: context.storeId, name: "Ana Depo", code: "ANA", status: "active" }).select("id").single(); warehouse = result.data; }
   if (!warehouse) { await context.admin.storage.from("product-images").remove(uploaded); await context.admin.from("catalog_products").delete().eq("id", created.product_id); return NextResponse.json({ error: "Ürün stoğu oluşturulamadı." }, { status: 500 }); }
-  const { error: stockError } = await context.admin.from("inventory_balances").insert({ warehouse_id: warehouse.id, offer_id: created.offer_id, on_hand: parsed.data.initialStock });
+  const { error: stockError } = await context.admin.from("inventory_balances").upsert({ warehouse_id: warehouse.id, offer_id: created.offer_id, on_hand: parsed.data.initialStock, reserved: 0 }, { onConflict: "warehouse_id,offer_id" });
   if (stockError) { await context.admin.storage.from("product-images").remove(uploaded); await context.admin.from("catalog_products").delete().eq("id", created.product_id); return NextResponse.json({ error: "Başlangıç stoğu kaydedilemedi." }, { status: 500 }); }
   return NextResponse.json({ ok: true, product: data?.[0] }, { status: 201 });
 }

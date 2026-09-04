@@ -53,11 +53,11 @@ export default function ProductDetailPage() {
       <section className="trendy-gallery-column">
         <div className={`trendy-main-image ${zoom.active ? "is-zoomed" : ""}`} onMouseMove={handleZoom} onMouseLeave={() => setZoom((current) => ({ ...current, active: false }))} onTouchStart={(event) => setTouchX(event.touches[0]?.clientX ?? null)} onTouchEnd={handleTouchEnd}>
           <button className={`detail-favorite ${favorites.includes(product.id) ? "active" : ""}`} onClick={() => toggleFavorite(product)} aria-label="Favoriye ekle"><i className="fa-solid fa-heart" /></button>
-          <Image key={gallery[galleryIndex]} src={gallery[galleryIndex]} width={560} height={560} priority style={{ transformOrigin: `${zoom.x}% ${zoom.y}%` }} alt={`${product.name} görünüm ${galleryIndex + 1}`} />
+          <Image key={gallery[galleryIndex]} src={gallery[galleryIndex]} width={560} height={560} priority style={{ transformOrigin: `${zoom.x}% ${zoom.y}%` }} alt={`${product.name} görünüm ${galleryIndex + 1}`} onError={(event) => { event.currentTarget.src = "/img/urun.jpg"; }} />
           {gallery.length > 1 && <><button className="gallery-prev" onClick={() => moveGallery(-1)} aria-label="Önceki görsel">‹</button><button className="gallery-next" onClick={() => moveGallery(1)} aria-label="Sonraki görsel">›</button></>}
           <small>{galleryIndex + 1} / {gallery.length}</small>
         </div>
-        {gallery.length > 1 && <div className="trendy-thumbs">{gallery.map((image, index) => <button key={`${image}-${index}`} className={index === galleryIndex ? "active" : ""} onMouseEnter={() => setGalleryIndex(index)} onFocus={() => setGalleryIndex(index)} onClick={() => setGalleryIndex(index)}><Image src={image} width={64} height={64} alt={`Ürün görseli ${index + 1}`} /></button>)}</div>}
+        {gallery.length > 1 && <div className="trendy-thumbs">{gallery.map((image, index) => <button key={`${image}-${index}`} className={index === galleryIndex ? "active" : ""} onMouseEnter={() => setGalleryIndex(index)} onFocus={() => setGalleryIndex(index)} onClick={() => setGalleryIndex(index)}><Image src={image} width={64} height={64} alt={`Ürün görseli ${index + 1}`} onError={(event) => { event.currentTarget.src = "/img/urun.jpg"; }} /></button>)}</div>}
       </section>
       <section className="trendy-buy-column">
         <div className="detail-heading"><h1><ProductTitle name={product.name} /></h1></div>
